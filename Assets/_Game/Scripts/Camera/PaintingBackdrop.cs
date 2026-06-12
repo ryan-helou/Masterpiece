@@ -497,11 +497,12 @@ namespace Velocity
 
             if (fuji != null)
             {
-                // the still center of the print — small, distant, serene while the sea rages
+                // the still center of the print — small, distant, serene while the sea rages;
+                // sits low so its feathered haze base hides behind the swell band in front
                 var L = Par("Fuji", 0.94f);
                 int i = 0;
                 for (float x = _bMinX + 14f; x <= _bMaxX + 28f; x += 56f, i++)
-                    ArtSpr(L, fuji, new Color(1f, 1f, 1f, 0.9f), new Vector3(x, _bMinY + _halfH * 0.55f, 9.5f), 4.5f, -80);
+                    ArtSpr(L, fuji, new Color(1f, 1f, 1f, 0.9f), new Vector3(x, _bMinY + 2.2f, 9.5f), 4.5f, -80);
             }
             if (cloud != null)
             {

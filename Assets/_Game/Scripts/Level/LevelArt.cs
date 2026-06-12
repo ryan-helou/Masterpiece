@@ -41,9 +41,11 @@ namespace Velocity
             var A = ArtKey.Mode.Auto;    // detects magenta / white / checker per file
             var ctr = new Vector2(0.5f, 0.5f); var bot = new Vector2(0.5f, 0f);
 
-            void Add(string name, Vector2 pivot, ArtKey.Mode mode = ArtKey.Mode.Auto)
+            void Add(string name, Vector2 pivot, ArtKey.Mode mode = ArtKey.Mode.Auto,
+                float featherX = 0f, bool featherBottom = false)
             {
-                var s = ArtKey.Load(folder + "/" + name, mode == ArtKey.Mode.Auto ? A : mode, pivot);
+                var s = ArtKey.Load(folder + "/" + name, mode == ArtKey.Mode.Auto ? A : mode, pivot,
+                    featherX, featherBottom);
                 if (s != null) set.Sprites[name] = s;
             }
 
@@ -64,21 +66,23 @@ namespace Velocity
             Add("overhang",   ctr);
             Add("wall",       ctr, ArtKey.Mode.Opaque);
             Add("ground-edge", ctr);
-            Add("fg-mist",    ctr);
+            Add("fg-mist",    ctr, ArtKey.Mode.Auto, 0.08f);
             Add("boost-pad",  ctr);
             Add("dash-orb",   ctr);
             Add("bg-moon",    ctr);
             Add("bg-wind",    ctr);
             Add("bg-mountain", bot);
             Add("bg-rays",    ctr);
-            Add("bg-clouds",  ctr);
+            Add("bg-clouds",  ctr, ArtKey.Mode.Auto, 0.08f);
             Add("bg-drape",   ctr);
             Add("bg-arch",    bot);
             Add("bg-star",    ctr);
             Add("bg-swirl",   ctr);
-            Add("bg-fuji",    bot);
-            Add("bg-swell",   ctr);
-            Add("bg-claw",    bot);
+            // wave backdrop bands: art runs hard off their edges, so feather the borders
+            // (fuji also fades its bottom — its haze block would otherwise float as a card)
+            Add("bg-fuji",    bot, ArtKey.Mode.Auto, 0.12f, true);
+            Add("bg-swell",   ctr, ArtKey.Mode.Auto, 0.10f);
+            Add("bg-claw",    bot, ArtKey.Mode.Auto, 0.08f);
             Add("bg-boat",    ctr);
             Add("bg-cypress", bot);
             Add("bg-village", bot);

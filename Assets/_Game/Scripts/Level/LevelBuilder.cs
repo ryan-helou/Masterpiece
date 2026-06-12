@@ -36,9 +36,20 @@ namespace Velocity
             float Wx(int c) => c + 0.5f;
             float Wy(int r) => (h - 1 - r) + 0.5f;     // cell-center world Y
 
-            // --- solid ground: wide runs merge per row; single-width cells (chimney walls,
-            // pillars) merge VERTICALLY into one collider so wall slides glide instead of
-            // stuttering across per-cell box seams ---
+            // --- static terrain: every solid piece feeds ONE CompositeCollider2D, so the whole
+            // level's walkable/slidable surface is a single seamless polygon — no collider seams
+            // to stutter a wall slide or catch the rolling ball, anywhere ---
+            var terrainGo = new GameObject("Terrain");
+            terrainGo.transform.SetParent(root, false);
+            terrainGo.layer = GameLayers.Ground;
+            var terrainRb = terrainGo.AddComponent<Rigidbody2D>();
+            terrainRb.bodyType = RigidbodyType2D.Static;
+            var composite = terrainGo.AddComponent<CompositeCollider2D>();
+            composite.geometryType = CompositeCollider2D.GeometryType.Polygons;
+            var terrain = terrainGo.transform;
+
+            // wide runs merge per row; single-width cells (chimney walls, pillars) merge
+            // vertically — fewer boxes for the composite to weld
             var solo = new bool[w, h];
             MergeRuns(w, h, At, '#', (start, r, len) =>
             {
@@ -47,9 +58,9 @@ namespace Velocity
                     solo[start, r] = true;
                     return;
                 }
-                CreateSolid(root, start, r, len, Wx, Wy, At);
+                CreateSolid(terrain, start, r, len, Wx, Wy, At);
                 if (LevelArt.Get("ground") == null)
-                    CreateCaps(root, start, len, r, At, Wx, Wy);
+                    CreateCaps(terrain, start, len, r, At, Wx, Wy);
             });
             for (int c = 0; c < w; c++)
                 for (int r = 0; r < h; )
@@ -57,11 +68,11 @@ namespace Velocity
                     if (!solo[c, r]) { r++; continue; }
                     int s = r;
                     while (r < h && solo[c, r]) r++;
-                    CreateSolidColumn(root, c, s, r - s, Wx, Wy, At);
+                    CreateSolidColumn(terrain, c, s, r - s, Wx, Wy, At);
                 }
             // invisible world-edge bounds (collision, no art) and low duck-tunnel ceilings
-            MergeRuns(w, h, At, 'B', (start, r, len) => CreateBoundary(root, start, r, len, Wy));
-            MergeRuns(w, h, At, 'T', (start, r, len) => CreateDuckCeiling(root, start, r, len, Wx, Wy));
+            MergeRuns(w, h, At, 'B', (start, r, len) => CreateBoundary(terrain, start, r, len, Wy));
+            MergeRuns(w, h, At, 'T', (start, r, len) => CreateDuckCeiling(terrain, start, r, len, Wx, Wy));
             // crumbling platforms and conveyors also merge into single strips
             MergeRuns(w, h, At, 'c', (start, r, len) => CreateCrumble(root, start, r, len, Wy));
             MergeRuns(w, h, At, '>', (start, r, len) => CreateConveyor(root, start, r, len, Wy, +1));
@@ -517,6 +528,11 @@ namespace Velocity
                          : null;
             if (artEnemy != null)
             {
+                // soft warm halo first — the mobs came out dark against dark backdrops, and a
+                // faint gold rim of light separates them at any distance
+                var halo = ArtPiece(go.transform, "EnemyHalo", TextureFactory.RadialGlow(48),
+                    Vector3.zero, kind == EnemyKind.Flyer ? 2.2f : 1.9f, 8);
+                halo.color = new Color(1f, 0.86f, 0.5f, 0.3f);
                 ArtPiece(go.transform, "EnemyArt", artEnemy, Vector3.zero,
                     kind == EnemyKind.Flyer ? 1.15f : 1.0f, 9);
             }
@@ -651,6 +667,7 @@ namespace Velocity
             go.transform.localScale = new Vector3(len, 1f, 1f);
             var col = go.AddComponent<BoxCollider2D>();
             col.size = Vector2.one;                 // scaled by transform -> (len, 1)
+            col.usedByComposite = true;             // welded into the Terrain composite
             go.layer = GameLayers.Ground;
 
             var tile = LevelArt.Get("ground");
@@ -681,11 +698,11 @@ namespace Velocity
                 {
                     if (At(start - 1, r) != '#' && At(start, r - 1) != '#')
                         QuadSprite(root, "GroundEdge", new Vector3(Wx(start) - 0.16f, Wy(r) - 0.05f, 0f),
-                            new Vector2(0.9f, 1.45f), edge, Color.white, 1);
+                            new Vector2(0.9f, 1.45f), edge, Color.white, 2);
                     if (At(start + len, r) != '#' && At(start + len - 1, r - 1) != '#')
                     {
                         var esr = QuadSprite(root, "GroundEdge", new Vector3(Wx(start + len - 1) + 0.16f, Wy(r) - 0.05f, 0f),
-                            new Vector2(0.9f, 1.45f), edge, Color.white, 1);
+                            new Vector2(0.9f, 1.45f), edge, Color.white, 2);
                         var sc = esr.transform.localScale; sc.x = -sc.x; esr.transform.localScale = sc;
                     }
                 }
@@ -716,6 +733,7 @@ namespace Velocity
             go.transform.localScale = new Vector3(1f, len, 1f);
             var col = go.AddComponent<BoxCollider2D>();
             col.size = Vector2.one;
+            col.usedByComposite = true;
             go.layer = GameLayers.Ground;
 
             if (LevelArt.Get("ground") != null)
@@ -761,6 +779,12 @@ namespace Velocity
             if ((c & 1) == 1)                                      // mirror every other column
             { var s = gsr.transform.localScale; s.x = -s.x; gsr.transform.localScale = s; }
 
+            // shade the tile's soil band down toward the painting's near-black: kills the
+            // repeating texture where it tiles the most AND replaces the cobalt mass with
+            // dark earth, while the grass band above stays bright green/gold
+            QuadSprite(root, "SoilShade", new Vector3(Wx(c), Wy(r) - 0.34f, 0f),
+                new Vector2(1.03f, 0.84f), SoilShade(), Color.white, 1);
+
             if (At(c, r + 1) == '#')                               // solid below → deep terrain
             {
                 // flat, uniform soil that STARTS at the cell top (hidden behind the grass tile)
@@ -783,14 +807,31 @@ namespace Velocity
             }
         }
 
+        // walls render at silhouette darkness: the painting's vertical faces are near-black,
+        // and at these values the tile's busy motif disappears while a hint of texture stays
         private static Color WallTint(int c, int r)
         {
             switch ((c * 5 + r * 3) % 3)
             {
-                case 1:  return new Color(0.82f, 0.86f, 0.72f);
-                case 2:  return new Color(0.74f, 0.78f, 0.66f);
-                default: return new Color(0.9f, 0.93f, 0.8f);
+                case 1:  return new Color(0.4f, 0.45f, 0.36f);
+                case 2:  return new Color(0.33f, 0.37f, 0.3f);
+                default: return new Color(0.46f, 0.51f, 0.4f);
             }
+        }
+
+        // cached soil-shade gradient (rebuilt when the theme's deep-earth color changes)
+        private static Sprite _soilShade;
+        private static Color _soilShadeKey;
+        private static Sprite SoilShade()
+        {
+            if (_soilShade == null || _soilShadeKey != Palette.GroundEdge)
+            {
+                var c = Palette.GroundEdge;
+                _soilShade = TextureFactory.VerticalFade(4, 48,
+                    new Color(c.r, c.g, c.b, 0.92f), new Color(c.r, c.g, c.b, 0f));
+                _soilShadeKey = Palette.GroundEdge;
+            }
+            return _soilShade;
         }
 
         /// <summary>Invisible solid world-edge: collision only, no sprite (kills the dark soil pillar
@@ -805,6 +846,7 @@ namespace Velocity
             go.transform.localScale = new Vector3(len, 1f, 1f);
             var col = go.AddComponent<BoxCollider2D>();
             col.size = Vector2.one;
+            col.usedByComposite = true;
             go.layer = GameLayers.Ground;
         }
 
@@ -823,6 +865,7 @@ namespace Velocity
             go.transform.localScale = new Vector3(len, cellTop - lowBottom, 1f);
             var col = go.AddComponent<BoxCollider2D>();
             col.size = Vector2.one;
+            col.usedByComposite = true;
             go.layer = GameLayers.Ground;
 
             // overhang visual (purely cosmetic) — dedicated low-shelf art first, then the frayed
