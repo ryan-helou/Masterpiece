@@ -300,6 +300,58 @@ namespace Velocity
             return ToSprite(tex, 16);
         }
 
+        /// <summary>A hollow star outline (anti-aliased) — the "empty slot" state for collectibles.
+        /// Thickness is a fraction of the star's radius.</summary>
+        public static Sprite StarOutline(int size, int points = 5, float thickness = 0.26f)
+        {
+            var tex = NewTex(size, size);
+            float c = (size - 1) / 2f;
+            float outer = size * 0.47f, inner = outer * 0.42f;
+            float shrink = 1f - thickness;
+            int n = points * 2;
+            var ox = new float[n]; var oy = new float[n];
+            var ix = new float[n]; var iy = new float[n];
+            for (int i = 0; i < n; i++)
+            {
+                float ang = -Mathf.PI / 2f + i * Mathf.PI / points;
+                float rad = (i % 2 == 0) ? outer : inner;
+                ox[i] = c + Mathf.Cos(ang) * rad;
+                oy[i] = c + Mathf.Sin(ang) * rad;
+                ix[i] = c + Mathf.Cos(ang) * rad * shrink;
+                iy[i] = c + Mathf.Sin(ang) * rad * shrink;
+            }
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float a = 0f;                                           // 2×2 supersample for smooth edges
+                for (int sy = 0; sy < 2; sy++)
+                    for (int sx = 0; sx < 2; sx++)
+                    {
+                        float px = x + 0.25f + sx * 0.5f, py = y + 0.25f + sy * 0.5f;
+                        if (PointInPoly(px, py, ox, oy, n) && !PointInPoly(px, py, ix, iy, n)) a += 0.25f;
+                    }
+                tex.SetPixel(x, y, new Color(1, 1, 1, a));
+            }
+            tex.Apply();
+            return ToSprite(tex, 16);
+        }
+
+        /// <summary>A 9-sliceable rounded box (set Image.type = Sliced) so one small texture
+        /// stretches into a pill/panel of any size without distorting the corners.</summary>
+        public static Sprite RoundedBoxSliced(int radius, int ppu = 16)
+        {
+            int s = radius * 2 + 6;
+            var tex = NewTex(s, s);
+            for (int y = 0; y < s; y++)
+            for (int x = 0; x < s; x++)
+                tex.SetPixel(x, y, new Color(1, 1, 1, RoundedAlpha(x, y, s, s, radius)));
+            tex.Apply();
+            var sp = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), ppu,
+                0, SpriteMeshType.FullRect, new Vector4(radius + 1, radius + 1, radius + 1, radius + 1));
+            sp.name = "RoundedBoxSliced";
+            return sp;
+        }
+
         private static bool PointInPoly(float px, float py, float[] vx, float[] vy, int n)
         {
             bool inside = false;

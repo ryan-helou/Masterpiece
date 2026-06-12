@@ -25,8 +25,12 @@ namespace Velocity
         private float _fpsSmooth = 60f;
         private int _hudCoinPrev;
         private float _coinPulse;
-        private Image[] _coinStarFills;
+        private Image[] _coinStarFills, _coinStarHalos;
         private Transform _coinPulseTarget;
+        private RectTransform _splitPill;
+        private CanvasGroup _splitGroup;
+        private float _splitTarget, _splitPulse;
+        private int _splitSign;   // -1 ahead, +1 behind, 0 unknown (for the cross-over pulse)
         private GameObject _powerPanel;
         private Image _powerIcon, _powerBar;
         private Text _powerLabel;
@@ -117,6 +121,17 @@ namespace Velocity
                 _coinPulseTarget.localScale = Vector3.one * (1f + 0.5f * _coinPulse);
             }
 
+            // delta pill: smooth fade in/out + a small pulse when crossing ahead/behind the ghost
+            if (_splitGroup != null)
+            {
+                _splitGroup.alpha = Mathf.MoveTowards(_splitGroup.alpha, _splitTarget, Time.unscaledDeltaTime * 5f);
+                if (_splitPulse > 0f)
+                {
+                    _splitPulse = Mathf.MoveTowards(_splitPulse, 0f, Time.unscaledDeltaTime * 5f);
+                    _splitPill.localScale = Vector3.one * (1f + 0.12f * _splitPulse);
+                }
+            }
+
             // screen flash fade-out
             if (_flash != null && _flash.color.a > 0f)
             {
@@ -148,23 +163,52 @@ namespace Velocity
             _hud.GetComponent<Image>().raycastTarget = false;
             var t = _hud.transform;
 
-            // fixed-width timer so the digits never jiggle
+            // soft top scrim (dark fading to clear) so the HUD reads over any painting behind it
+            var scrim = UIFactory.Rect(t, "TopScrim");
+            scrim.anchorMin = new Vector2(0f, 1f);
+            scrim.anchorMax = new Vector2(1f, 1f);
+            scrim.pivot = new Vector2(0.5f, 1f);
+            scrim.anchoredPosition = Vector2.zero;
+            scrim.sizeDelta = new Vector2(0, 215);
+            var scrimImg = scrim.gameObject.AddComponent<Image>();
+            scrimImg.sprite = TextureFactory.VerticalFade(2, 64,
+                new Color(0.02f, 0.03f, 0.06f, 0f), new Color(0.02f, 0.03f, 0.06f, 0.55f));
+            scrimImg.raycastTarget = false;
+
+            // fixed-width timer so the digits never jiggle; milliseconds smaller + dimmer
             var timerRt = UIFactory.Rect(t, "Timer");
             UIFactory.Place(timerRt, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -22), new Vector2(450, 92));
             _timerMono = timerRt.gameObject.AddComponent<MonoText>();
-            _timerMono.Build(9, 50f, 92f, 84, Palette.UiText);
+            _timerMono.Build(9, 50f, 92f, 84, Palette.UiText, tailCells: 4, tailScale: 0.62f, tailAlpha: 0.8f);
             _timerMono.SetText("0:00.000");
 
-            _splitText = UIFactory.LabelAt(t, "", 34, Palette.UiAccent,
-                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -128), new Vector2(700, 44),
-                TextAnchor.UpperCenter, FontStyle.Bold);
+            // live +/- vs PB ghost: a translucent pill under the timer that fades in/out
+            _splitPill = UIFactory.Rect(t, "SplitPill");
+            UIFactory.Place(_splitPill, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -124), new Vector2(180, 46));
+            _splitGroup = _splitPill.gameObject.AddComponent<CanvasGroup>();
+            _splitGroup.alpha = 0f;
+            _splitGroup.interactable = false;
+            _splitGroup.blocksRaycasts = false;
+            var pillImg = _splitPill.gameObject.AddComponent<Image>();
+            pillImg.sprite = TextureFactory.RoundedBoxSliced(22);
+            pillImg.type = Image.Type.Sliced;
+            pillImg.color = new Color(0.03f, 0.04f, 0.08f, 0.62f);
+            pillImg.raycastTarget = false;
+            _splitText = UIFactory.Label(_splitPill, "", 30, Palette.UiAccent, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UIFactory.Stretch((RectTransform)_splitText.transform);
 
+            // top-left "museum plaque": gold number + title over a thin gold rule, then PB
             _hudLevel = UIFactory.LabelAt(t, "", 30, Palette.UiText,
                 new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28, -24), new Vector2(560, 40),
                 TextAnchor.UpperLeft, FontStyle.Bold);
 
+            var rule = UIFactory.Box(t, new Vector2(30, -64), new Vector2(64, 3),
+                new Color(Palette.UiGold.r, Palette.UiGold.g, Palette.UiGold.b, 0.85f),
+                new Vector2(0f, 1f), new Vector2(0f, 1f), "TitleRule");
+            rule.raycastTarget = false;
+
             _hudBest = UIFactory.LabelAt(t, "", 24, Palette.UiTextDim,
-                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28, -64), new Vector2(560, 34),
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28, -76), new Vector2(560, 34),
                 TextAnchor.UpperLeft);
 
             _fpsText = UIFactory.LabelAt(t, "", 22, Palette.UiTextDim,
@@ -179,16 +223,28 @@ namespace Velocity
                 new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-28, -60), new Vector2(220, 36),
                 TextAnchor.UpperRight, FontStyle.Bold);
 
-            // 3 collectible stars (top-left): empty outlines that fill gold on pickup
+            // 3 collectible stars (top-left): hollow outlines that fill gold (with a soft halo) on pickup
             _coinStarFills = new Image[3];
+            _coinStarHalos = new Image[3];
             var starSprite = TextureFactory.Star(40, 5);
+            var starOutline = TextureFactory.StarOutline(40, 5);
+            var haloSprite = TextureFactory.RadialGlow(64);
             for (int i = 0; i < 3; i++)
             {
                 var slot = UIFactory.Rect(t, "CoinStar" + i);
                 UIFactory.Place(slot, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                    new Vector2(34 + i * 52, -120), new Vector2(44, 44));
+                    new Vector2(30 + i * 48, -118), new Vector2(38, 38));
                 var bg = slot.gameObject.AddComponent<Image>();
-                bg.sprite = starSprite; bg.color = new Color(0.85f, 0.88f, 0.95f, 0.20f); bg.raycastTarget = false;
+                bg.sprite = starOutline; bg.color = new Color(0.85f, 0.88f, 0.95f, 0.42f); bg.raycastTarget = false;
+
+                var haloRt = UIFactory.Rect(slot, "Halo");
+                UIFactory.Place(haloRt, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(76, 76));
+                var halo = haloRt.gameObject.AddComponent<Image>();
+                halo.sprite = haloSprite;
+                halo.color = new Color(Palette.UiGold.r, Palette.UiGold.g, Palette.UiGold.b, 0.4f);
+                halo.raycastTarget = false;
+                halo.enabled = false;
+                _coinStarHalos[i] = halo;
 
                 var fillRt = UIFactory.Rect(slot, "Fill");
                 UIFactory.Stretch(fillRt);
@@ -201,7 +257,7 @@ namespace Velocity
             // power-up indicator (top-left, below the stars): icon + label + draining timer bar
             _powerPanel = UIFactory.Rect(t, "PowerPanel").gameObject;
             UIFactory.Place((RectTransform)_powerPanel.transform, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                new Vector2(34, -178), new Vector2(240, 44));
+                new Vector2(34, -210), new Vector2(240, 44));
             var pIconRt = UIFactory.Rect(_powerPanel.transform, "PIcon");
             UIFactory.Place(pIconRt, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(14, 0), new Vector2(26, 26));
             _powerIcon = pIconRt.gameObject.AddComponent<Image>();
@@ -233,7 +289,7 @@ namespace Velocity
             _dashBar.raycastTarget = false;
 
             _deathsText = UIFactory.LabelAt(t, "", 22, Palette.UiTextDim,
-                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28, -98), new Vector2(360, 32),
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28, -166), new Vector2(360, 32),
                 TextAnchor.UpperLeft);
 
             _comboText = UIFactory.LabelAt(t, "", 56, Palette.UiGold,
@@ -266,6 +322,7 @@ namespace Velocity
                     bool used = i < total;
                     if (slot.activeSelf != used) slot.SetActive(used);
                     _coinStarFills[i].enabled = i < collected;
+                    _coinStarHalos[i].enabled = i < collected;
                 }
             }
 
@@ -316,8 +373,12 @@ namespace Velocity
         public void SetHudLevel(string name, double? best)
         {
             _hudLevel.text = name;
-            _hudBest.text = best.HasValue ? "PB  " + SpeedrunTimer.Format(best.Value) : "PB  —";
+            string faint = ColorUtility.ToHtmlStringRGB(Palette.UiTextFaint);
+            _hudBest.text = $"<color=#{faint}>PB</color>  " + (best.HasValue ? SpeedrunTimer.Format(best.Value) : "—");
             _splitText.text = "";
+            _splitTarget = 0f;
+            _splitSign = 0;
+            if (_splitGroup != null) _splitGroup.alpha = 0f;
         }
 
         public void TickHud(double elapsed, bool running, int combo = 0, float delta = 0f, bool hasDelta = false)
@@ -339,16 +400,24 @@ namespace Velocity
                 }
             }
 
-            // live +/- vs your PB ghost (split slot under the timer)
+            // live +/- vs your PB ghost (pill under the timer; fades in Update)
             if (_splitText != null)
             {
-                if (hasDelta && running)
+                bool show = hasDelta && running && Settings.ShowTimer;
+                _splitTarget = show ? 1f : 0f;
+                if (show)
                 {
                     bool ahead = delta < 0f;
-                    _splitText.text = (ahead ? "-" : "+") + SpeedrunTimer.Format(Mathf.Abs(delta));
+                    float mag = Mathf.Abs(delta);
+                    // compact: "+8.796" under a minute, full "1:08.796" beyond
+                    _splitText.text = (ahead ? "-" : "+") + (mag < 60f ? mag.ToString("0.000") : SpeedrunTimer.Format(mag));
                     _splitText.color = ahead ? Palette.UiAccent : Palette.UiDanger;
+                    int sign = ahead ? -1 : 1;
+                    if (_splitSign != 0 && _splitSign != sign) _splitPulse = 1f;   // crossed the ghost
+                    _splitSign = sign;
+                    _splitPill.sizeDelta = new Vector2(Mathf.Max(150f, _splitText.preferredWidth + 52f), 46f);
                 }
-                else _splitText.text = "";
+                else _splitSign = 0;
             }
 
             _fpsSmooth = Mathf.Lerp(_fpsSmooth, 1f / Mathf.Max(0.0001f, Time.unscaledDeltaTime), 0.1f);

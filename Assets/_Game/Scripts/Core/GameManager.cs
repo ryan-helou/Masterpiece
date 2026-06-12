@@ -212,11 +212,12 @@ namespace Velocity
             _ui.ShowHud(true);
 
             Leaderboard.TryGetBest(def.Id, out double best);
-            string label = def.Id + "  " + def.DisplayName;
+            string gold = ColorUtility.ToHtmlStringRGB(Palette.UiGold);
+            string label = $"<color=#{gold}>{def.Id}</color>  {def.DisplayName}";
             if (_runMode == RunMode.FullRun)
             {
                 int n = LevelLibrary.WorldAt(_runWorld).Levels.Count;
-                label = $"RUN {_runLocalIndex + 1}/{n}  •  {def.DisplayName}";
+                label = $"<color=#{gold}>RUN {_runLocalIndex + 1}/{n}</color>  •  {def.DisplayName}";
             }
             _ui.SetHudLevel(label, Leaderboard.HasCompleted(def.Id) ? best : (double?)null);
             _ui.SetHudCoins(_coinsCollected, _coinsTotal);
