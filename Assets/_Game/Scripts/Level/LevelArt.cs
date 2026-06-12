@@ -70,7 +70,7 @@ namespace Velocity
             Add("boost-pad",  ctr);
             Add("dash-orb",   ctr);
             Add("bg-moon",    ctr);
-            Add("bg-wind",    ctr);
+            Add("bg-wind",    ctr, ArtKey.Mode.Auto, 0.1f);   // feathered ends — no hard repeat seam
             Add("bg-mountain", bot);
             Add("bg-rays",    ctr);
             Add("bg-clouds",  ctr, ArtKey.Mode.Auto, 0.08f);
@@ -82,7 +82,7 @@ namespace Velocity
             // (fuji also fades its bottom — its haze block would otherwise float as a card)
             Add("bg-fuji",    bot, ArtKey.Mode.Auto, 0.12f, true);
             Add("bg-swell",   ctr, ArtKey.Mode.Auto, 0.10f);
-            Add("bg-claw",    bot, ArtKey.Mode.Auto, 0.08f);
+            Add("bg-claw",    bot, ArtKey.Mode.Auto, 0.16f);
             Add("bg-boat",    ctr);
             Add("bg-cypress", bot);
             Add("bg-village", bot);
