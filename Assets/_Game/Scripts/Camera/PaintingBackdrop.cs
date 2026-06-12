@@ -47,6 +47,16 @@ namespace Velocity
                 case BackdropStyle.Chiaroscuro: Chiaroscuro(theme); break;
                 case BackdropStyle.Wave:        Wave(theme); break;
             }
+
+            // ---- atmosphere scrim: a sky-tinted veil OVER every backdrop layer, UNDER the
+            // playfield. Without it the painted scenery competes with the platforms at full
+            // contrast and the frame reads chaotic; one veil pushes the whole distance back
+            // into the night and hands the contrast budget to the layer you actually play on.
+            var scrimRoot = Locked("Scrim");
+            Color veil = theme.Sky;
+            veil.a = Mathf.Clamp01(theme.Scrim * 0.95f);
+            Spr(scrimRoot, _box, veil, new Vector3(0f, 0f, 12f),
+                new Vector2(_halfW * 2.8f, _halfH * 2.8f), -45);
         }
 
         // ---- scaffolding ----
@@ -235,12 +245,13 @@ namespace Velocity
 
             if (swirl != null)
             {
+                // sparser and quieter — these are huge, and at high alpha they shout over play
                 var L = Par("Swirls", 0.9f);
                 int i = 0;
-                for (float x = _bMinX; x <= _bMaxX + 24f; x += 24f, i++)
+                for (float x = _bMinX + 6f; x <= _bMaxX + 32f; x += 32f, i++)
                 {
                     float y = _bMinY + _halfH * (1.5f + 0.45f * Mathf.Sin(i * 1.3f));
-                    var sr = ArtSpr(L, swirl, new Color(1, 1, 1, 0.6f), new Vector3(x, y, 8f), 7f + (i % 2), -78);
+                    var sr = ArtSpr(L, swirl, new Color(1, 1, 1, 0.42f), new Vector3(x, y, 8f), 6.5f + (i % 2), -78);
                     sr.gameObject.AddComponent<Spinner>().degreesPerSecond = (i % 2 == 0) ? 4f : -3f;
                 }
             }
@@ -288,7 +299,7 @@ namespace Velocity
                 for (float x = _bMinX; x <= _bMaxX + w; x += w * 0.9f, i++)
                 {
                     float y = _bMinY + _halfH * (1.05f + 0.12f * ((i % 2) * 2 - 1));
-                    var sr = ArtSpr(L, wind, new Color(1f, 1f, 1f, 0.55f), new Vector3(x, y, 8.5f), 3.5f, -72);
+                    var sr = ArtSpr(L, wind, new Color(1f, 1f, 1f, 0.38f), new Vector3(x, y, 8.5f), 3.5f, -72);
                     var sw = sr.gameObject.AddComponent<Sway>(); sw.speed = 0.35f; sw.degrees = 1.2f; sw.phase = i * 0.9f;
                 }
             }
@@ -527,8 +538,9 @@ namespace Velocity
             }
             if (boat != null)
             {
-                // empty oshiokuri boats riding the far swell — pitched by the sea, nobody aboard
-                var L = Par("Boats", 0.58f);
+                // empty oshiokuri boats riding the far swell — pitched by the sea, nobody aboard.
+                // Same parallax factor as the swell and claws: the sea moves as ONE body.
+                var L = Par("Boats", 0.7f);
                 int i = 0;
                 for (float x = _bMinX + 18f; x <= _bMaxX; x += 42f, i++)
                 {
@@ -541,18 +553,20 @@ namespace Velocity
             }
             if (claw != null)
             {
-                // the great claws rising behind the action — the sea reaching over the level
-                var L = Par("Claws", 0.5f);
+                // the great wave cresting BEHIND the swell band (order -72 vs the swell's -68):
+                // the rollers in front mask the claw image's rectangular bottom and flanks, so
+                // only the iconic crest towers above the sea — the print's own composition.
+                // Opaque (translucency read as a ghost poster), same parallax factor as the
+                // swell so the sea moves as one body.
+                var L = Par("Claws", 0.7f);
                 int i = 0;
-                for (float x = _bMinX + 8f; x <= _bMaxX + 12f; x += 32f, i++)
+                for (float x = _bMinX + 10f; x <= _bMaxX + 12f; x += 44f, i++)
                 {
                     var holder = new GameObject("ClawH");
                     holder.transform.SetParent(L, false);
-                    holder.transform.localPosition = new Vector3(x, _bMinY - 0.4f, 0f);
-                    var sw = holder.AddComponent<Sway>(); sw.speed = 0.25f; sw.degrees = 1.6f; sw.phase = i * 0.8f;
-                    // slightly translucent so the pale sky bleeds through — the claws loom
-                    // without turning the whole backdrop blue
-                    ArtSpr(holder.transform, claw, new Color(1f, 1f, 1f, 0.85f), new Vector3(0f, 0f, 8f), 6.5f + (i % 2) * 1.2f, -58);
+                    holder.transform.localPosition = new Vector3(x, _bMinY - 0.6f, 0f);
+                    var sw = holder.AddComponent<Sway>(); sw.speed = 0.25f; sw.degrees = 1.2f; sw.phase = i * 0.8f;
+                    ArtSpr(holder.transform, claw, Color.white, new Vector3(0f, 0f, 8f), 6.0f + (i % 2) * 0.8f, -72);
                 }
             }
             if (mist != null)

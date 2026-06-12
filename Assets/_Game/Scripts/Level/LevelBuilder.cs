@@ -221,7 +221,7 @@ namespace Velocity
             float cx = start + len / 2f;
             // foam surface sits ~at the pit floor; the void body extends below, one strip per run
             QuadSprite(root, "PoolStrip", new Vector3(cx, Wy(r) - 0.3f, 0f),
-                new Vector2(len + 0.04f, 2.2f), pool, Color.white, 5);
+                new Vector2(len + 0.04f, 2.2f), pool, new Color(0.72f, 0.78f, 0.82f), 5);
         }
 
         private static void CreateConveyor(Transform root, int start, int r, int len,
@@ -366,8 +366,10 @@ namespace Velocity
             var artPad = LevelArt.Get("boost-pad");
             if (artPad != null)
             {
-                // art faces RIGHT; the vertical variant is the same piece rotated to point up
-                var ps = ArtPiece(go.transform, "PadArt", artPad, new Vector3(0f, -0.05f, 0f), 0.95f, 5);
+                // art faces RIGHT; the vertical variant is the same piece rotated to point up.
+                // Drawn well over cell size — the launcher should LOOM — with its base seated
+                // on the floor (the trigger stays a 1×1 cell; art is bigger than the hitbox).
+                var ps = ArtPiece(go.transform, "PadArt", artPad, new Vector3(0f, 0.3f, 0f), 1.8f, 5);
                 if (up) ps.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
                 var tw = ps.gameObject.AddComponent<Twinkle>();
                 tw.speed = 2.5f; tw.scaleAmp = 0.06f; tw.alphaAmp = 0.2f;
@@ -774,16 +776,16 @@ namespace Velocity
                 return;
             }
 
-            var gsr = QuadSprite(root, "GroundTile", new Vector3(Wx(c), Wy(r) - 0.05f, 0f),
-                new Vector2(1.01f, 1.4f), tile, GroundTint(c), 0);
-            if ((c & 1) == 1)                                      // mirror every other column
-            { var s = gsr.transform.localScale; s.x = -s.x; gsr.transform.localScale = s; }
+            // uniform tiles — per-cell tint/mirror variation read as patchwork, so the
+            // repeat is hidden the honest way: the soil band below is shaded to near-black
+            QuadSprite(root, "GroundTile", new Vector3(Wx(c), Wy(r) - 0.05f, 0f),
+                new Vector2(1.01f, 1.4f), tile, Color.white, 0);
 
             // shade the tile's soil band down toward the painting's near-black: kills the
             // repeating texture where it tiles the most AND replaces the cobalt mass with
             // dark earth, while the grass band above stays bright green/gold
-            QuadSprite(root, "SoilShade", new Vector3(Wx(c), Wy(r) - 0.34f, 0f),
-                new Vector2(1.03f, 0.84f), SoilShade(), Color.white, 1);
+            QuadSprite(root, "SoilShade", new Vector3(Wx(c), Wy(r) - 0.31f, 0f),
+                new Vector2(1.03f, 0.92f), SoilShade(), Color.white, 1);
 
             if (At(c, r + 1) == '#')                               // solid below → deep terrain
             {
@@ -792,18 +794,6 @@ namespace Velocity
                 float top = Wy(r) + 0.5f, bottom = -14f;
                 Quad(root, "DeepSoil", new Vector3(Wx(c), (top + bottom) * 0.5f, 0f),
                     new Vector2(1.04f, top - bottom), Palette.GroundEdge, -3);
-            }
-        }
-
-        // multiplicative tints: suppress blue a touch, never boost it — repeated terrain drifts
-        // toward the painting's grass-greens and warm earth instead of a wall of cobalt
-        private static Color GroundTint(int c)
-        {
-            switch ((c * 7 + 3) % 3)
-            {
-                case 1:  return new Color(0.94f, 1f, 0.86f);
-                case 2:  return new Color(0.88f, 0.95f, 0.83f);
-                default: return Color.white;
             }
         }
 
@@ -828,7 +818,7 @@ namespace Velocity
             {
                 var c = Palette.GroundEdge;
                 _soilShade = TextureFactory.VerticalFade(4, 48,
-                    new Color(c.r, c.g, c.b, 0.92f), new Color(c.r, c.g, c.b, 0f));
+                    new Color(c.r, c.g, c.b, 0.97f), new Color(c.r, c.g, c.b, 0f));
                 _soilShadeKey = Palette.GroundEdge;
             }
             return _soilShade;
