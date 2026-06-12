@@ -1,0 +1,135 @@
+using UnityEngine;
+
+namespace Velocity
+{
+    /// <summary>Which hand-built scenery a level paints behind itself — the *vibe* of the painting,
+    /// not a photo of it.</summary>
+    public enum BackdropStyle
+    {
+        StarryNight,   // swirling night sky, crescent moon, cypress hills
+        Fresco,        // soft warm fresco glow + drifting clouds
+        Garden,        // rococo green canopy + golden light shafts
+        Scream,        // burning wavy sky over a dark fjord + bridge rails
+        Alpine,        // stormy sky, snowy peaks, wind streaks
+        Fog,           // layered mountains receding into mist
+        Chiaroscuro,   // deep shadow with one warm spotlight pool
+        Wave,          // stylised foam-claw waves + Mt Fuji
+    }
+
+    /// <summary>
+    /// One level = one famous painting. Each theme carries a palette sampled from that painting and
+    /// a <see cref="BackdropStyle"/> so the whole level — sky, ground, player, coins, UI accent and
+    /// the hand-built scenery behind it — evokes the canvas. (The real image is only used small, as
+    /// the framed artwork in the museum overworld.)
+    ///
+    /// The table order IS the level order. Swap a row to re-skin a level.
+    /// </summary>
+    public class PaintingTheme
+    {
+        public string Name;          // level / painting title
+        public string Painter;       // "Artist · Year"
+        public string Hint;          // intro-card flavour + mechanic tip
+        public string ResourceKey;   // Resources.Load path, e.g. "Paintings/starry-night"
+
+        // palette sampled from the painting
+        public Color Sky, SkyFar, SkyNear;     // camera bg + two parallax layers
+        public Color Ground, GroundCap, GroundEdge;
+        public Color Player, Goal, Coin, Accent, Hazard;
+        public float Scrim;          // how much to dim the framed artwork in the museum (0..1)
+
+        // scenery
+        public BackdropStyle Style;
+        public Color Glow;           // stars / light / foam
+        public Color Motif;          // silhouette / shape colour
+        public string ArtFolder;     // Resources subfolder of imported art (null = procedural)
+
+        private static Color H(string hex)
+        {
+            ColorUtility.TryParseHtmlString(hex, out var c);
+            return c;
+        }
+
+        /// <summary>Assign the backdrop scenery style (chained after Make in the table).</summary>
+        public PaintingTheme WithStyle(BackdropStyle style, string glow = null, string motif = null)
+        {
+            Style = style;
+            Glow  = glow  != null ? H(glow)  : Coin;
+            Motif = motif != null ? H(motif) : new Color(Ground.r * 0.5f, Ground.g * 0.5f, Ground.b * 0.5f, 1f);
+            return this;
+        }
+
+        /// <summary>Point this level at a folder of imported art under Resources (chained in the table).</summary>
+        public PaintingTheme WithArt(string folder) { ArtFolder = folder; return this; }
+
+        // convenience builder so the table below stays readable
+        public static PaintingTheme Make(
+            string name, string painter, string key, string hint, float scrim,
+            string sky, string skyFar, string skyNear,
+            string ground, string groundCap, string groundEdge,
+            string player, string goal, string coin, string accent, string hazard)
+        {
+            return new PaintingTheme
+            {
+                Name = name, Painter = painter, ResourceKey = key, Hint = hint, Scrim = scrim,
+                Sky = H(sky), SkyFar = H(skyFar), SkyNear = H(skyNear),
+                Ground = H(ground), GroundCap = H(groundCap), GroundEdge = H(groundEdge),
+                Player = H(player), Goal = H(goal), Coin = H(coin), Accent = H(accent), Hazard = H(hazard),
+            };
+        }
+    }
+
+    public static class PaintingThemes
+    {
+        // index == level index (0-based). Exactly the order the player meets them.
+        public static readonly PaintingTheme[] All =
+        {
+            // 1 — STARRY NIGHT : dreamy low-gravity night, swirl-rings + glide
+            PaintingTheme.Make("Starry Night", "Vincent van Gogh · 1889",
+                "Paintings/starry-night",
+                "Drift through the night — tap jump inside a swirl-ring for a second boost, then glide the long gaps.",
+                0.42f,
+                "#0a1530", "#14264f", "#20386b",
+                "#1d2b1a", "#3a5a2e", "#0f160c",
+                "#ffe9b0", "#f4d35e", "#ffd23a", "#6fb7ff", "#ff4060")
+                .WithStyle(BackdropStyle.StarryNight, "#ffe27a", "#0c1a10").WithArt("Level1"),
+
+            // 2 — THE CREATION OF ADAM : "the reach" — precise gaps + spark boost-pads
+            PaintingTheme.Make("The Creation of Adam", "Michelangelo · 1512",
+                "Paintings/creation-of-adam",
+                "Bridge the gap. The spark-pads fling you across — almost touching is never enough.",
+                0.40f,
+                "#241a14", "#3a2a1e", "#50392a",
+                "#6e4d35", "#9a6f48", "#3a2718",
+                "#ecc0a0", "#d24a37", "#f0c674", "#d98c5f", "#ff3b30")
+                .WithStyle(BackdropStyle.Fresco, "#fff0d2", "#7a5238"),
+
+            // 3 — THE SWING : momentum / pendulum — springs, note-blocks, swinging saws
+            PaintingTheme.Make("The Swing", "Jean-Honoré Fragonard · 1767",
+                "Paintings/the-swing",
+                "Keep the swing alive — bounce the note-blocks and springs, carry your momentum through the garden.",
+                0.40f,
+                "#16240f", "#2a4019", "#426033",
+                "#3a2b1c", "#5e4830", "#221a10",
+                "#f4a6c0", "#ffd86a", "#ffe08a", "#f4a6c0", "#ff3b56")
+                .WithStyle(BackdropStyle.Garden, "#ffe69a", "#102a12"),
+
+            // 4 — THE SCREAM : disorientation — collapsing bridges over the fjord
+            PaintingTheme.Make("The Scream", "Edvard Munch · 1893",
+                "Paintings/the-scream",
+                "The bridge is falling. Don't stop — the boards drop the instant you set foot on them.",
+                0.34f,
+                "#7a3b1a", "#a04a1c", "#c25a20",
+                "#15203a", "#2e3c5a", "#0c1422",
+                "#f2e23a", "#ff7a1a", "#ffd23a", "#ff7a33", "#ff2d2d")
+                .WithStyle(BackdropStyle.Scream, "#ffd24a", "#0e1830"),
+        };
+
+        public static int Count => All.Length;
+
+        public static PaintingTheme For(int levelIndex)
+        {
+            if (All.Length == 0) return null;
+            return All[Mathf.Clamp(levelIndex, 0, All.Length - 1)];
+        }
+    }
+}
