@@ -82,6 +82,21 @@ namespace Velocity
             return ToSprite(tex, ppu);
         }
 
+        /// <summary>Vertical gradient that KEEPS each color's own alpha — for translucent
+        /// shading overlays (e.g. darkening the soil band of a repeated terrain tile).</summary>
+        public static Sprite VerticalFade(int w, int h, Color bottom, Color top)
+        {
+            var tex = NewTex(w, h);
+            for (int y = 0; y < h; y++)
+            {
+                float f = h > 1 ? (float)y / (h - 1) : 1f;
+                var col = Color.Lerp(bottom, top, f);
+                for (int x = 0; x < w; x++) tex.SetPixel(x, y, col);
+            }
+            tex.Apply();
+            return ToSprite(tex, 16);
+        }
+
         /// <summary>Opaque vertical gradient (bottom→top). Used for skies and lit ground slabs.</summary>
         public static Sprite VerticalGradient(int w, int h, Color bottom, Color top)
         {

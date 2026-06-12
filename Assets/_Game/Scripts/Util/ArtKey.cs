@@ -24,16 +24,76 @@ namespace Velocity
             return Mode.Magenta;
         }
 
-        public static Sprite Load(string path, Mode mode, Vector2 pivot)
+        public static Sprite Load(string path, Mode mode, Vector2 pivot,
+            float featherX = 0f, bool featherBottom = false)
         {
             var src = Resources.Load<Texture2D>(path);
             if (src == null) return null;
             var tex = ToReadable(src);
             KeyOut(tex, mode);
+            if (mode != Mode.Opaque)
+            {
+                ZapCornerMark(tex);
+                if (featherX > 0f || featherBottom) Feather(tex, featherX, featherBottom);
+            }
             tex.Apply(false, false);
             var s = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), pivot, 100f);
             s.name = path;
             return s;
+        }
+
+        /// <summary>The image generator stamps a small pale sparkle watermark near the
+        /// bottom-right corner. It isn't background-colored, so keying leaves it behind and it
+        /// would render as a fleck floating beside every sprite. Erase it: clear the corner
+        /// box's surviving pixels, but ONLY when they form a small isolated cluster that never
+        /// touches the box's inner edges (i.e. never when real art occupies the corner).</summary>
+        private static void ZapCornerMark(Texture2D tex)
+        {
+            var px = tex.GetPixels32();
+            int w = tex.width, h = tex.height;
+            int x0 = Mathf.RoundToInt(w * 0.84f);
+            int yT = Mathf.RoundToInt(h * 0.35f);      // texture y=0 is the image's bottom
+            int count = 0; bool touches = false;
+            for (int y = 0; y < yT; y++)
+                for (int x = x0; x < w; x++)
+                    if (px[y * w + x].a > 20)
+                    {
+                        count++;
+                        if (x == x0 || y == yT - 1) touches = true;
+                    }
+            if (count == 0 || touches || count > (w * h) / 200) return;   // empty, or real art
+            for (int y = 0; y < yT; y++)
+                for (int x = x0; x < w; x++)
+                    px[y * w + x].a = 0;
+            tex.SetPixels32(px);
+        }
+
+        /// <summary>Fade alpha out toward the left/right (and optionally bottom) borders — for
+        /// backdrop bands whose art runs hard off the image edge: repeated copies would
+        /// otherwise show a straight slice against the sky.</summary>
+        private static void Feather(Texture2D tex, float fx, bool bottom)
+        {
+            var px = tex.GetPixels32();
+            int w = tex.width, h = tex.height;
+            int mx = Mathf.RoundToInt(w * fx);
+            int my = bottom ? Mathf.RoundToInt(h * 0.16f) : 0;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    float a = 1f;
+                    if (mx > 0)
+                    {
+                        if (x < mx) a = x / (float)mx;
+                        if (x >= w - mx) a = Mathf.Min(a, (w - 1 - x) / (float)mx);
+                    }
+                    if (my > 0 && y < my) a = Mathf.Min(a, y / (float)my);   // y=0 = bottom
+                    if (a < 1f)
+                    {
+                        int i = y * w + x;
+                        px[i].a = (byte)(px[i].a * Mathf.SmoothStep(0f, 1f, a));
+                    }
+                }
+            tex.SetPixels32(px);
         }
 
         /// <summary>Slice a keyed sheet into cols×rows frames, left-to-right then top-to-bottom.</summary>
@@ -43,6 +103,7 @@ namespace Velocity
             if (src == null) return null;
             var tex = ToReadable(src);
             KeyOut(tex, mode);
+            if (mode != Mode.Opaque) ZapCornerMark(tex);
             tex.Apply(false, false);
 
             int fw = tex.width / cols, fh = tex.height / rows;
