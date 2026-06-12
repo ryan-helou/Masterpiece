@@ -89,7 +89,7 @@ namespace Velocity
                 "Drift through the night — tap jump inside a swirl-ring for a second boost, then glide the long gaps.",
                 0.42f,
                 "#0a1530", "#14264f", "#20386b",
-                "#1d2b1a", "#3a5a2e", "#0f160c",
+                "#1d2b1a", "#3a5a2e", "#13223c",
                 "#ffe9b0", "#f4d35e", "#ffd23a", "#6fb7ff", "#ff4060")
                 .WithStyle(BackdropStyle.StarryNight, "#ffe27a", "#0c1a10").WithArt("Level1"),
 
@@ -101,7 +101,7 @@ namespace Velocity
                 "#241a14", "#3a2a1e", "#50392a",
                 "#6e4d35", "#9a6f48", "#3a2718",
                 "#ecc0a0", "#d24a37", "#f0c674", "#d98c5f", "#ff3b30")
-                .WithStyle(BackdropStyle.Fresco, "#fff0d2", "#7a5238"),
+                .WithStyle(BackdropStyle.Fresco, "#fff0d2", "#7a5238").WithArt("Level2"),
 
             // 3 — THE SWING : momentum / pendulum — springs, note-blocks, swinging saws
             PaintingTheme.Make("The Swing", "Jean-Honoré Fragonard · 1767",

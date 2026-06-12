@@ -62,3 +62,10 @@ crashlytics-build.properties
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Level preview tool build output
+Tools/**/bin/
+Tools/**/obj/
+
+# Unity crash-recovery snapshots
+/Assets/_Recovery*

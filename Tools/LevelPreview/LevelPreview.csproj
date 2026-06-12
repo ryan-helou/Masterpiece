@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>LevelPreview</AssemblyName>
+    <RootNamespace>LevelPreview</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- compile the REAL game sources so the preview never drifts from the game -->
+    <Compile Include="../../Assets/_Game/Scripts/Level/LevelDefinition.cs" />
+    <Compile Include="../../Assets/_Game/Scripts/Level/LevelComposer.cs" />
+    <Compile Include="../../Assets/_Game/Scripts/Level/LevelLibrary.cs" />
+  </ItemGroup>
+
+</Project>

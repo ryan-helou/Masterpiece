@@ -138,6 +138,11 @@ namespace Velocity
                 float gt = _ghost.TimeAtX(_player.transform.position.x);
                 if (gt >= 0f) { delta = (float)_timer.Elapsed - gt; hasDelta = true; }
             }
+            if (Music.Instance != null && _player != null && _built.Bounds.size.x > 1f)
+                Music.Instance.SetIntensity(
+                    (_player.transform.position.x - _built.Bounds.min.x) / _built.Bounds.size.x,
+                    Mathf.Abs(_player.Velocity.x) / 11f);
+
             int combo = _player != null ? _player.Combo : 0;
             _ui.TickHud(DisplayTime, _timer.Running, combo, delta, hasDelta);
             if (_player != null)
@@ -159,6 +164,7 @@ namespace Velocity
             var theme = PaintingThemes.For(index);
             Palette.ApplyPainting(theme);                 // retint the whole world to this painting
             LevelArt.Use(theme.ArtFolder);                // load imported art for this level (cached)
+            if (Music.Instance != null) Music.Instance.SetTheme(theme.Style);   // the painting's score
             if (Camera.main != null) Camera.main.backgroundColor = Palette.Background;
 
             _built = LevelBuilder.Build(def, _levelHolder);
@@ -308,6 +314,7 @@ namespace Velocity
             int rank = Leaderboard.Submit(def.Id, time, out bool isRecord);
             if (isRecord) GhostStore.Save(def.Id, _recorder.Samples);
 
+            if (Music.Instance != null) Music.Instance.Duck(0.35f, 1.2f);
             if (Sfx.Instance != null)
             {
                 if (isRecord) Sfx.Instance.PlayRecord();
@@ -384,6 +391,7 @@ namespace Velocity
             Time.timeScale = 1f;
 
             Vector3 deathPos = _player != null ? _player.transform.position : Vector3.zero;
+            if (Music.Instance != null) Music.Instance.Duck(0.45f, 0.7f);
             if (Sfx.Instance != null) Sfx.Instance.PlayDeath();
             if (FX.Instance != null) FX.Instance.Death(deathPos);
             _cam.AddShake(0.7f);
@@ -477,6 +485,7 @@ namespace Velocity
             UnloadLevel();
             Time.timeScale = 1f;
             _state = GameState.Overworld;
+            if (Music.Instance != null) Music.Instance.SetGallery();
 
             if (Camera.main != null) Camera.main.backgroundColor = Overworld.WallColor;
 
@@ -509,6 +518,7 @@ namespace Velocity
             UnloadLevel();
             Time.timeScale = 1f;
             _state = GameState.MainMenu;
+            if (Music.Instance != null) Music.Instance.SetGallery();
             _ui.ShowHud(false);
             _ui.ShowMainMenu();
         }

@@ -43,6 +43,9 @@ namespace Velocity
                 if (LevelArt.Get("ground") == null)
                     CreateCaps(root, start, len, r, At, Wx, Wy);
             });
+            // invisible world-edge bounds (collision, no art) and low duck-tunnel ceilings
+            MergeRuns(w, h, At, 'B', (start, r, len) => CreateBoundary(root, start, r, len, Wy));
+            MergeRuns(w, h, At, 'T', (start, r, len) => CreateDuckCeiling(root, start, r, len, Wx, Wy));
             // crumbling platforms and conveyors also merge into single strips
             MergeRuns(w, h, At, 'c', (start, r, len) => CreateCrumble(root, start, r, len, Wy));
             MergeRuns(w, h, At, '>', (start, r, len) => CreateConveyor(root, start, r, len, Wy, +1));
@@ -248,6 +251,14 @@ namespace Velocity
             col.size = new Vector2(0.85f, 0.85f);
             go.AddComponent<DashOrb>();
 
+            var artOrb = LevelArt.Get("dash-orb");
+            if (artOrb != null)
+            {
+                var os = ArtPiece(go.transform, "OrbArt", artOrb, Vector3.zero, 0.95f, 6);
+                var tw = os.gameObject.AddComponent<Twinkle>();
+                tw.speed = 2.2f; tw.scaleAmp = 0.12f; tw.alphaAmp = 0.25f;
+                return;
+            }
             var v = new GameObject("OrbV");
             v.transform.SetParent(go.transform, false);
             v.transform.localScale = Vector3.one * 0.62f;
@@ -325,6 +336,16 @@ namespace Velocity
             go.AddComponent<BoostPad>().velocity = velocity;
 
             bool up = velocity.y > velocity.x;
+            var artPad = LevelArt.Get("boost-pad");
+            if (artPad != null)
+            {
+                // art faces RIGHT; the vertical variant is the same piece rotated to point up
+                var ps = ArtPiece(go.transform, "PadArt", artPad, new Vector3(0f, -0.05f, 0f), 0.95f, 5);
+                if (up) ps.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+                var tw = ps.gameObject.AddComponent<Twinkle>();
+                tw.speed = 2.5f; tw.scaleAmp = 0.06f; tw.alphaAmp = 0.2f;
+                return;
+            }
             var v = new GameObject("PadV");
             v.transform.SetParent(go.transform, false);
             v.transform.localScale = up ? new Vector3(1.1f, 0.5f, 1f) : new Vector3(0.5f, 1.1f, 1f);
@@ -473,11 +494,15 @@ namespace Velocity
             col.isTrigger = true;
             col.size = new Vector2(0.82f, 0.82f);
 
-            // body: imported art for the walker, procedural otherwise
-            var artEnemy = kind == EnemyKind.Walker ? LevelArt.Get("enemy") : null;
+            // body: imported art per kind (wings/spikes baked into the art), procedural otherwise
+            var artEnemy = kind == EnemyKind.Walker ? LevelArt.Get("enemy")
+                         : kind == EnemyKind.Flyer  ? LevelArt.Get("enemy-flyer")
+                         : kind == EnemyKind.Spiky  ? LevelArt.Get("enemy-spiky")
+                         : null;
             if (artEnemy != null)
             {
-                ArtPiece(go.transform, "EnemyArt", artEnemy, Vector3.zero, 1.0f, 9);
+                ArtPiece(go.transform, "EnemyArt", artEnemy, Vector3.zero,
+                    kind == EnemyKind.Flyer ? 1.15f : 1.0f, 9);
             }
             else
             {
@@ -493,23 +518,29 @@ namespace Velocity
 
             if (kind == EnemyKind.Flyer || kind == EnemyKind.Diver)
             {
-                EnemyWing(go.transform, -0.5f, +1f);
-                EnemyWing(go.transform, 0.5f, -1f);
+                if (artEnemy == null)
+                {
+                    EnemyWing(go.transform, -0.5f, +1f);
+                    EnemyWing(go.transform, 0.5f, -1f);
+                }
                 if (kind == EnemyKind.Flyer) { go.AddComponent<EnemyFlyer>().range = 3.5f; }
                 else go.AddComponent<EnemyDiver>();
             }
             else if (kind == EnemyKind.Spiky)
             {
-                for (int i = -1; i <= 1; i++)
+                if (artEnemy == null)
                 {
-                    var sp = new GameObject("Spike");
-                    sp.transform.SetParent(go.transform, false);
-                    sp.transform.localPosition = new Vector3(i * 0.26f, 0.42f, 0f);
-                    sp.transform.localScale = new Vector3(0.32f, 0.32f, 1f);
-                    var ssr = sp.AddComponent<SpriteRenderer>();
-                    ssr.sprite = TextureFactory.Triangle(16, 16);
-                    ssr.color = Palette.Hazard;
-                    ssr.sortingOrder = 10;
+                    for (int i = -1; i <= 1; i++)
+                    {
+                        var sp = new GameObject("Spike");
+                        sp.transform.SetParent(go.transform, false);
+                        sp.transform.localPosition = new Vector3(i * 0.26f, 0.42f, 0f);
+                        sp.transform.localScale = new Vector3(0.32f, 0.32f, 1f);
+                        var ssr = sp.AddComponent<SpriteRenderer>();
+                        ssr.sprite = TextureFactory.Triangle(16, 16);
+                        ssr.color = Palette.Hazard;
+                        ssr.sortingOrder = 10;
+                    }
                 }
                 var spk = go.AddComponent<EnemySpiky>();
                 spk.range = 3f;
@@ -567,6 +598,14 @@ namespace Velocity
             go.tag = GameTags.Hazard;
             go.AddComponent<Hazard>();
 
+            var artSaw = LevelArt.Get("saw");
+            if (artSaw != null)
+            {
+                var bs = ArtPiece(go.transform, "SawArt", artSaw, Vector3.zero, 1.35f, 6);
+                bs.gameObject.AddComponent<Spinner>().degreesPerSecond = 540f;
+                return;
+            }
+
             var blade = new GameObject("Blade");
             blade.transform.SetParent(go.transform, false);
             blade.transform.localScale = Vector3.one * 1.2f;
@@ -618,17 +657,42 @@ namespace Velocity
                 // deep earth far down (off-screen) so the floor isn't a floating slab. Buried cells are
                 // covered by that deep earth, so we skip them. (All parented to ROOT to dodge the
                 // run's (len,1) collider scale.)
-                Color soilDeep = Palette.Hex("#13223c");
+                Color soilDeep = Palette.GroundEdge;   // per-theme deep earth (set in PaintingThemes)
+                var wallTile = LevelArt.Get("wall");
                 for (int c = start; c < start + len; c++)
                 {
-                    if (At(c, r - 1) == '#') continue;                 // buried — covered by deep earth
+                    if (At(c, r - 1) == '#')                           // buried — covered by deep earth,
+                    {                                                  // but texture exposed vertical faces
+                        if (wallTile != null && (At(c - 1, r) != '#' || At(c + 1, r) != '#'))
+                            QuadSprite(root, "WallTile", new Vector3(Wx(c), Wy(r), 0f),
+                                new Vector2(1.02f, 1.02f), wallTile, Color.white, -2);
+                        continue;
+                    }
                     QuadSprite(root, "GroundTile", new Vector3(Wx(c), Wy(r) - 0.05f, 0f),
                         new Vector2(1.01f, 1.4f), tile, Color.white, 0);
                     if (At(c, r + 1) == '#')                           // solid below → deep terrain
                     {
-                        float top = Wy(r) - 0.5f, bottom = -10f;
-                        QuadSprite(root, "DeepSoil", new Vector3(Wx(c), (top + bottom) * 0.5f, 0f),
-                            new Vector2(1.02f, top - bottom), TextureFactory.GroundSlab(), soilDeep, -2);
+                        // flat, uniform soil that STARTS at the cell top (hidden behind the grass tile)
+                        // and runs far down — no internal texture seam, no grass/soil border line.
+                        float top = Wy(r) + 0.5f, bottom = -14f;
+                        Quad(root, "DeepSoil", new Vector3(Wx(c), (top + bottom) * 0.5f, 0f),
+                            new Vector2(1.04f, top - bottom), soilDeep, -3);
+                    }
+                }
+
+                // painted lips where a surface run ends in open air (pit edges, ledge ends);
+                // the art faces LEFT, mirrored for the right end
+                var edge = LevelArt.Get("ground-edge");
+                if (edge != null)
+                {
+                    if (At(start - 1, r) != '#' && At(start, r - 1) != '#')
+                        QuadSprite(root, "GroundEdge", new Vector3(Wx(start) - 0.16f, Wy(r) - 0.05f, 0f),
+                            new Vector2(0.9f, 1.45f), edge, Color.white, 1);
+                    if (At(start + len, r) != '#' && At(start + len - 1, r - 1) != '#')
+                    {
+                        var esr = QuadSprite(root, "GroundEdge", new Vector3(Wx(start + len - 1) + 0.16f, Wy(r) - 0.05f, 0f),
+                            new Vector2(0.9f, 1.45f), edge, Color.white, 1);
+                        var sc = esr.transform.localScale; sc.x = -sc.x; esr.transform.localScale = sc;
                     }
                 }
                 return;
@@ -643,6 +707,56 @@ namespace Velocity
             sr.sortingOrder = 0;
             var b = sr.sprite.bounds.size;
             vis.transform.localScale = new Vector3(1f / b.x, 1f / b.y, 1f);  // fill 1×1 local cell
+        }
+
+        /// <summary>Invisible solid world-edge: collision only, no sprite (kills the dark soil pillar
+        /// that a full-height '#' wall used to draw at the far left/right of every level).</summary>
+        private static void CreateBoundary(Transform root, int start, int r, int len,
+            System.Func<int, float> Wy)
+        {
+            float cx = start + len / 2f;
+            var go = new GameObject("Bound");
+            go.transform.SetParent(root, false);
+            go.transform.position = new Vector3(cx, Wy(r), 0f);
+            go.transform.localScale = new Vector3(len, 1f, 1f);
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = Vector2.one;
+            go.layer = GameLayers.Ground;
+        }
+
+        /// <summary>A low duck-tunnel ceiling: the collider's bottom is dropped ~0.15 below the cell so
+        /// the standing capsule (top ≈ +1.08) is firmly blocked while the crouch capsule (top ≈ +0.6)
+        /// slips under. Renders the frayed island/overhang art so it reads as a rock shelf.</summary>
+        private static void CreateDuckCeiling(Transform root, int start, int r, int len,
+            System.Func<int, float> Wx, System.Func<int, float> Wy)
+        {
+            float cellTop = Wy(r) + 0.5f;
+            float lowBottom = Wy(r) - 0.5f - 0.15f;       // drop the underside into the gap a touch
+            float cx = start + len / 2f;
+            var go = new GameObject("DuckCeiling");
+            go.transform.SetParent(root, false);
+            go.transform.position = new Vector3(cx, (cellTop + lowBottom) * 0.5f, 0f);
+            go.transform.localScale = new Vector3(len, cellTop - lowBottom, 1f);
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = Vector2.one;
+            go.layer = GameLayers.Ground;
+
+            // overhang visual (purely cosmetic) — dedicated low-shelf art first, then the frayed
+            // island art, then a grass strip
+            var over = LevelArt.Get("overhang");
+            var plat = LevelArt.Get("platform");
+            var tile = LevelArt.Get("ground");
+            if (over != null)
+                QuadSprite(root, "DuckArt", new Vector3(cx, Wy(r) - 0.1f, 0f),
+                    new Vector2(len + 0.7f, 1.6f), over, Color.white, 0);
+            else if (plat != null)
+                QuadSprite(root, "DuckArt", new Vector3(cx, Wy(r) - 0.1f, 0f),
+                    new Vector2(len + 0.7f, 1.5f), plat, Color.white, 0);
+            else if (tile != null)
+                QuadSprite(root, "DuckArt", new Vector3(cx, Wy(r), 0f),
+                    new Vector2(len + 0.04f, 1.3f), tile, Color.white, 0);
+            else
+                Quad(root, "DuckArt", new Vector3(cx, Wy(r), 0f), new Vector2(len, 1f), Palette.Ground, 0);
         }
 
         private static void CreateCaps(Transform root, int start, int len, int r,

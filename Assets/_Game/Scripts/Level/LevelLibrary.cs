@@ -77,6 +77,14 @@ namespace Velocity
             return this;
         }
 
+        /// <summary>An INVISIBLE full-height world edge: solid collision, no art (so the level
+        /// doesn't end in an ugly dark soil pillar). Used for the left/right map bounds.</summary>
+        public LevelDraw Bound(int x)
+        {
+            for (int y = 0; y < _h; y++) Set(x, y, 'B');
+            return this;
+        }
+
         public LevelDraw Spawn(int x, int y) => Set(x, y, 'P');
         public LevelDraw Goal(int x, int y) => Set(x, y, 'G');
 
@@ -201,59 +209,141 @@ namespace Velocity
         // falling platforms (l), glide feathers (w), wall-climb chimneys, saws (S), mobs (g/f/y).
 
         // ---------------------------------------------- 1  STARRY NIGHT
-        // dreamy low-gravity night: swirl-rings to double-jump, feathers to glide the long gaps.
+        // The ring is the star: introduce it safely, develop it among enemy-timed islands,
+        // twist it through a sweeping saw at the climax (~85%), then a fast victory lap.
+        // No flat dead stretches — every chunk asks for a read, a jump, or a timing call.
         private static LevelDefinition Level1()
         {
             var c = new LevelComposer(16);
-            c.Start(6).Power('u').Hops(new[] { 2, 3, 2 }).Gauntlet("g f").RingGap(9).Power('w')
-             .Hops(new[] { 2, 3 }).Gauntlet("f g f").HopsCoin(new[] { 3, 2, 4 }).RingGap(10)
-             .Gauntlet("g f").Bridge(3).PitCoin(6).Gauntlet("f g").RingGap(9).Hops(new[] { 2, 3, 2 })
-             .Gauntlet("g f").SpringCoin().Gauntlet("f g").Rest(3).End();
+            c.Start(6)
+             // --- act 1: teach (pure movement, nothing cycles yet) ---
+             .Pit(3).Rest(3)                        // the first, friendliest gap
+             .Gauntlet("g", 4)                      // one slow walker — the stomp lesson
+             .DuckTunnel(4).Rest(2)                 // slide the overhang, stand back up
+             .Hops(new[] { 2, 3, 2 }).Rest(2)       // first platforms over spikes
+             .RingGap(7).Rest(4)                    // meet the swirl-ring (room to overshoot)
+             // --- act 2: develop (enemies own the landings) ---
+             .MobIsle(4, 6, 'g').MobIsle(5, 5, 'g') // island rhythm: leap into the patrol's window
+             .SawHall(1)                            // the blade shows itself over safe ground...
+             .SawGap(6).Rest(3)                     // ...then guards a pit
+             .WallClimb(4, 2)                       // climb into the sky
+             .HighRoad(18)                          // fast clean line above, slow spiky lane below
+             .FlyerGap(6)                           // a flyer crosses your arc — slip by or stomp it
+             .StairDown(2, 4, 'g')                  // committed hops back down, speed for free
+             // --- act 3: twist and climax ---
+             .TunnelHops(3)                         // short hops only — the roof punishes greed
+             .MobIsle(4, 6, 'y')                    // spiked patroller: no stomp, timing only
+             .SpringCoin().Rest(3)                  // breather — the calm before the leap
+             .RingSawGap(9)                         // THE jump: ring double-jump past the blade
+             // --- act 4: victory lap ---
+             .Runout(14)                            // full-speed spike hops to the flag
+             .End();
             return new LevelDefinition("1", "Starry Night",
                 "Drift through the night — jump into a swirl-ring and tap jump again for a second boost.",
-                38.0, 58.0, c.Rows());
+                32.0, 52.0, c.Rows());
         }
 
         // ---------------------------------------------- 2  THE CREATION OF ADAM
-        // "the reach": precise hops and spark-pad boosts to bridge the famous gap.
+        // "The reach" is the star: the spark-pad fling is learned over safe ground, developed
+        // over pits, then twisted at the climax — a gap where the fling alone falls short and
+        // only a mid-air dash closes the last almost-touching inch.
         private static LevelDefinition Level2()
         {
             var c = new LevelComposer(16);
-            c.Start(6).Power('u').Hops(new[] { 2, 3, 2 }).Gauntlet("g f").BoostGap(9).Gauntlet("f g")
-             .HopsCoin(new[] { 3, 2, 4, 2 }).Power('w').BoostGap(9).Gauntlet("g z g").PitCoin(6)
-             .Rest(3).DashGap(7).Gauntlet("f g").BoostGap(9).Hops(new[] { 2, 3 }).Gauntlet("g f")
-             .SpringCoin().Gauntlet("f g").Rest(3).End();
+            c.Start(6)
+             // --- act 1: teach the fling ---
+             .Hops(new[] { 2, 3, 2 }).Rest(2)       // warmup platforms
+             .MobIsle(4, 6, 'g')                    // a patrolled landing to read
+             .BoostRun(16)                          // the spark-pad, over safe ground (full flight)
+             .BoostGap(9).Rest(5)                   // now it carries you over spikes
+             // --- act 2: develop at height ---
+             .SawGap(6)                             // blade-timed jump
+             .WallClimb(5, 2)                       // a taller chimney than Level 1's
+             .HopsCoin(new[] { 2, 3, 2 }, 2, 3)     // sky hops, coin on the high middle
+             .FlyerGap(6)                           // a flyer crosses the arc
+             .Drop(5)                               // commit to the fall
+             // --- act 3: the dash twist ---
+             .DashGap(7).Rest(2)                    // meet the mid-air refill orb
+             .MobIsle(5, 5, 'y')                    // spiked patroller, timing only
+             .PitCoin(6)                            // coin dangling low over the spikes
+             .BoostGap(10).Rest(3)                  // a longer fling, then a breath
+             // --- climax: the reach ---
+             .Reach(12)                             // fingertip to fingertip, spark between
+             // --- victory lap ---
+             .Runout(12)
+             .End();
             return new LevelDefinition("2", "The Creation of Adam",
                 "Bridge the gap. The spark-pads fling you across — almost touching is never enough.",
-                42.0, 62.0, c.Rows());
+                36.0, 56.0, c.Rows());
         }
 
         // ---------------------------------------------- 3  THE SWING
-        // momentum / pendulum: note-blocks, springs and swinging saws — keep the swing alive.
+        // Momentum is the star: bounce is taught for free, developed over spikes, lifted
+        // skyward by a spring tower, then twisted at the climax — a note-block chain whose
+        // junction arcs are swept by pendulum saws. Keep the swing alive or fall out of it.
         private static LevelDefinition Level3()
         {
             var c = new LevelComposer(18);
-            c.Start(6).Hops(new[] { 2, 3 }).Gauntlet("g f").NoteBounce(3).Power('u').Gauntlet("f g")
-             .SpringGap(6).HopsCoin(new[] { 3, 2, 4, 2 }).Gauntlet("g z y").NoteBounce(4).Power('w')
-             .SawHall(2).Gauntlet("f g").PitCoin(7).SpringGap(6).Gauntlet("g f").SpringCoin()
-             .NoteBounce(3).Gauntlet("f g").Rest(3).End();
+            c.Start(6)
+             // --- act 1: teach the bounce ---
+             .Hops(new[] { 2, 3 }).Rest(2)          // warmup
+             .NoteRun(8)                            // note-blocks over safe ground
+             .NoteBounce(3).Rest(3)                 // now the blocks bridge a pit
+             // --- act 2: the pendulum garden ---
+             .SwingAlley(2)                         // blades skim the floor in fixed arcs
+             .MobIsle(4, 6, 'g')                    // patrolled landing
+             .SpringGap(6).Rest(2)                  // spring fling over spikes
+             .SpringTower(5)                        // ride the full bounce up the column
+             .HopsCoin(new[] { 2, 3, 2 }, 2, 3)     // sky hops, coin on the middle
+             .FlyerGap(6).Rest(3)                   // flyer in the arc, then a landing
+             .SawGap(7)                             // wide blade-timed jump at height
+             .StairDown(2, 4, 'y')                  // spiked patroller holds the descent
+             // --- act 3: tighten the rhythm ---
+             .SwingAlley(2, 6)                      // closer pendulums, tighter pockets
+             .SpringCoin().Rest(3)                  // coin at the apex, then a breath
+             // --- climax: the swing itself ---
+             .NoteSawChain(4)                       // bounce the chain through the blades
+             // --- victory lap ---
+             .Runout(12)
+             .End();
             return new LevelDefinition("3", "The Swing",
                 "Keep the swing alive — bounce the note-blocks and springs, carry your momentum through the garden.",
-                46.0, 66.0, c.Rows());
+                40.0, 60.0, c.Rows());
         }
 
         // ---------------------------------------------- 4  THE SCREAM
-        // disorientation: crumbling and falling bridges over the fjord — never stop moving.
+        // Urgency is the star: ground that dies under you. Crumble boards are re-taught fast,
+        // developed with donut drops at height, twisted by a diving screamer over the bridge,
+        // and the climax trades ground for sky — a feather glide through the swoop. The
+        // hardest level: stopping is the only real mistake.
         private static LevelDefinition Level4()
         {
             var c = new LevelComposer(18);
-            c.Start(6).Power('w').Bridge(3).Gauntlet("g f").FallBridge(2).HopsCoin(new[] { 2, 4, 2, 3 })
-             .Power('u').Gauntlet("f g").FallBridge(3).SawHall(2).Gauntlet("g z y").PitCoin(7)
-             .FallBridge(2).Gauntlet("g f").Bridge(4).Gauntlet("f g").SpringCoin().FallBridge(2)
-             .Gauntlet("g f").Rest(3).End();
+            c.Start(6)
+             // --- act 1: the ground gives way ---
+             .Hops(new[] { 2, 3, 2 }).Rest(2)       // warmup
+             .Bridge(2).Rest(3)                     // crumble boards, short and survivable
+             .MobIsle(4, 6, 'g')                    // patrolled landing
+             .FallBridge(2).Rest(2)                 // donut boards drop away
+             // --- act 2: pressure at height ---
+             .SawGap(7)                             // wide blade-timed jump
+             .WallClimb(4, 2)                       // climb the fjord wall
+             .HopsCoin(new[] { 2, 4, 2 }, 2, 3)     // sky hops, coin on the tall middle
+             .FlyerGap(6)                           // flyer in the arc
+             .DiveBridge(3)                         // the screamer plunges as you cross
+             .StairDown(2, 4, 'y')                  // spiked patroller on the way down
+             // --- act 3: no safe footing left ---
+             .TunnelHops(3)                         // roof-capped short hops
+             .PitCoin(7)                            // coin dangling low over the spikes
+             .Bridge(3).Rest(3)                     // crumble sprint, then the cliff edge
+             // --- climax: leap into the sky ---
+             .GlideGap(11)                          // feather-drift past the diving screamer
+             // --- victory lap ---
+             .Runout(12)
+             .End();
             return new LevelDefinition("4", "The Scream",
                 "The bridge is falling. Don't stop — the boards drop the instant you set foot on them.",
-                50.0, 70.0, c.Rows());
+                42.0, 62.0, c.Rows());
         }
 
     }

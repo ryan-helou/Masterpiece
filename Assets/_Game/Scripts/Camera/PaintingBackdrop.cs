@@ -16,6 +16,8 @@ namespace Velocity
         private readonly List<PLayer> _par = new List<PLayer>();
 
         private float _halfW, _halfH, _bMinX, _bMaxX, _bMinY;
+        private float _camBaseY;                  // lowest camera Y (layers are authored for this view)
+        private const float VerticalParallax = 0.25f;  // damp vertical drift so layers never leave the frame
         private Sprite _glow, _disc, _tri, _box;
 
         public void Setup(Transform cameraTransform, PaintingTheme theme, Bounds bounds)
@@ -25,6 +27,7 @@ namespace Velocity
             _halfH = camera != null ? camera.orthographicSize : 6.7f;
             _halfW = _halfH * (camera != null ? camera.aspect : 16f / 9f);
             _bMinX = bounds.min.x; _bMaxX = bounds.max.x; _bMinY = bounds.min.y;
+            _camBaseY = _bMinY + _halfH;          // matches CameraController's bottom clamp
 
             _glow = TextureFactory.RadialGlow(64);
             _disc = TextureFactory.Circle(48, 24);
@@ -259,6 +262,44 @@ namespace Velocity
                         Random.Range(1.2f, 2.2f), 0.18f, 0.4f, i * 0.6f);
                 }
             }
+            var mist = LevelArt.Get("fg-mist");
+            if (mist != null)
+            {
+                // a whisper-thin band drifting in FRONT of the action (factor > 1 moves against
+                // the camera = foreground). Very low alpha so it never costs readability.
+                var L = Par("Mist", 1.25f);
+                float w = AspectWidth(mist, 2.4f);
+                int i = 0;
+                for (float x = _bMinX - w; x <= _bMaxX * 1.35f + w; x += w * 0.85f, i++)
+                {
+                    var sr = ArtSpr(L, mist, new Color(1f, 1f, 1f, 0.13f),
+                        new Vector3(x, _bMinY + 2.8f, -2f), 2.4f, 14);
+                    var sw = sr.gameObject.AddComponent<Sway>(); sw.speed = 0.25f; sw.degrees = 0.8f; sw.phase = i * 1.3f;
+                }
+            }
+            var wind = LevelArt.Get("bg-wind");
+            if (wind != null)
+            {
+                // the painting's rolling wind-river: a drifting band across the mid-sky, so the
+                // view stays painterly when the level climbs high
+                var L = Par("Wind", 0.84f);
+                float w = AspectWidth(wind, 3.5f);
+                int i = 0;
+                for (float x = _bMinX; x <= _bMaxX + w; x += w * 0.9f, i++)
+                {
+                    float y = _bMinY + _halfH * (1.05f + 0.12f * ((i % 2) * 2 - 1));
+                    var sr = ArtSpr(L, wind, new Color(1f, 1f, 1f, 0.55f), new Vector3(x, y, 8.5f), 3.5f, -72);
+                    var sw = sr.gameObject.AddComponent<Sway>(); sw.speed = 0.35f; sw.degrees = 1.2f; sw.phase = i * 0.9f;
+                }
+            }
+            var mtn = LevelArt.Get("bg-mountain");
+            if (mtn != null)
+            {
+                var L = Par("Mountains", 0.7f);
+                float w = AspectWidth(mtn, 5.5f);
+                for (float x = _bMinX - w; x <= _bMaxX + w; x += w * 0.94f)
+                    ArtSpr(L, mtn, Color.white, new Vector3(x, _bMinY - 0.4f, 9f), 5.5f, -70);
+            }
             if (hills != null)
             {
                 var L = Par("Hills", 0.6f);
@@ -290,12 +331,80 @@ namespace Velocity
 
         private void Fresco(PaintingTheme t)
         {
+            if (LevelArt.Get("bg-rays") != null || LevelArt.Get("bg-clouds") != null) { FrescoArt(t); return; }
+
             Sky(t.SkyNear, t.SkyFar);
             var sky = Locked("Glow");
             Spr(sky, _glow, new Color(t.Glow.r, t.Glow.g, t.Glow.b, 0.5f),
                 new Vector3(_halfW * 0.05f, _halfH * 0.3f, 20f), Vector2.one * (_halfH * 2.6f), -88);
             Horizon(t.Glow, 0.18f);
             Motes(new Color(1f, 0.92f, 0.8f, 1f), 5, 0.2f, 0.85f);
+        }
+
+        // ---- imported-art Fresco (Creation of Adam — divinity as light/cloth/architecture only) ----
+        private void FrescoArt(PaintingTheme t)
+        {
+            Sky(t.SkyNear, t.SkyFar);
+
+            var rays   = LevelArt.Get("bg-rays");
+            var clouds = LevelArt.Get("bg-clouds");
+            var drape  = LevelArt.Get("bg-drape");
+            var arch   = LevelArt.Get("bg-arch");
+            var mist   = LevelArt.Get("fg-mist");
+
+            if (rays != null)
+            {
+                // the divine light pours from the upper-RIGHT — the direction of travel, so the
+                // whole level is a run toward the light
+                var L = Locked("Rays");
+                var sr = ArtSpr(L, rays, new Color(1f, 1f, 1f, 0.5f),
+                    new Vector3(_halfW * 0.45f, _halfH * 0.5f, 24f), _halfH * 1.7f, -86);
+                Pulse(sr, 0.5f, 0.03f, 0.1f, 0f);
+            }
+            if (clouds != null)
+            {
+                var L = Par("Clouds", 0.8f);
+                float w = AspectWidth(clouds, 4f);
+                int i = 0;
+                for (float x = _bMinX; x <= _bMaxX + w; x += w * 0.9f, i++)
+                    ArtSpr(L, clouds, new Color(1f, 1f, 1f, 0.85f),
+                        new Vector3(x, _bMinY + _halfH * (1.1f + 0.18f * Mathf.Sin(i * 1.7f)), 9f), 4f, -68);
+            }
+            if (drape != null)
+            {
+                // floating crimson silk — the cloak without its wearer
+                var L = Par("Drapes", 0.55f);
+                int i = 0;
+                for (float x = _bMinX + 10f; x <= _bMaxX; x += 34f, i++)
+                {
+                    var holder = new GameObject("DrapeH");
+                    holder.transform.SetParent(L, false);
+                    holder.transform.localPosition = new Vector3(x, _bMinY + _halfH * 1.45f, 0f);
+                    var sw = holder.AddComponent<Sway>(); sw.speed = 0.4f; sw.degrees = 3f; sw.phase = i * 1.1f;
+                    ArtSpr(holder.transform, drape, new Color(1f, 1f, 1f, 0.9f), Vector3.zero, 6f, -60);
+                }
+            }
+            if (arch != null)
+            {
+                var L = Par("Arches", 0.68f);
+                float w = AspectWidth(arch, 5f);
+                for (float x = _bMinX - w; x <= _bMaxX + w; x += w * 0.95f)
+                    ArtSpr(L, arch, new Color(1f, 1f, 1f, 0.8f), new Vector3(x, _bMinY - 0.3f, 8f), 5f, -64);
+            }
+            if (mist != null)
+            {
+                // warm plaster-dust haze drifting in front of the action
+                var L = Par("Mist", 1.25f);
+                float w = AspectWidth(mist, 2.4f);
+                int i = 0;
+                for (float x = _bMinX - w; x <= _bMaxX * 1.35f + w; x += w * 0.85f, i++)
+                {
+                    var sr = ArtSpr(L, mist, new Color(1f, 0.96f, 0.88f, 0.12f),
+                        new Vector3(x, _bMinY + 2.8f, -2f), 2.4f, 14);
+                    var sw = sr.gameObject.AddComponent<Sway>(); sw.speed = 0.25f; sw.degrees = 0.8f; sw.phase = i * 1.3f;
+                }
+            }
+            Motes(new Color(1f, 0.92f, 0.8f, 1f), 6, 0.2f, 0.85f);
         }
 
         private void Garden(PaintingTheme t)
@@ -377,7 +486,14 @@ namespace Velocity
             if (_cam == null) return;
             var p = _cam.position;
             foreach (var t in _locked) t.position = new Vector3(p.x, p.y, 0f);
-            foreach (var l in _par) { var q = p * (1f - l.f); l.t.position = new Vector3(q.x, q.y, 0f); }
+            foreach (var l in _par)
+            {
+                // full parallax horizontally; vertically the layer rides almost 1:1 with the camera
+                // (only a hint of drift), so climbing high never pushes the backdrop out of frame.
+                float x = p.x * (1f - l.f);
+                float y = _camBaseY * (1f - l.f) + (p.y - _camBaseY) * (1f - l.f * VerticalParallax);
+                l.t.position = new Vector3(x, y, 0f);
+            }
         }
     }
 }

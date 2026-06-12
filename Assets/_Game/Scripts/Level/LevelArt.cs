@@ -41,14 +41,14 @@ namespace Velocity
             var A = ArtKey.Mode.Auto;    // detects magenta / white / checker per file
             var ctr = new Vector2(0.5f, 0.5f); var bot = new Vector2(0.5f, 0f);
 
-            void Add(string name, Vector2 pivot)
+            void Add(string name, Vector2 pivot, ArtKey.Mode mode = ArtKey.Mode.Auto)
             {
-                var s = ArtKey.Load(folder + "/" + name, A, pivot);
+                var s = ArtKey.Load(folder + "/" + name, mode == ArtKey.Mode.Auto ? A : mode, pivot);
                 if (s != null) set.Sprites[name] = s;
             }
 
             Add("player",     ctr);
-            Add("ground",     ctr);
+            Add("ground",     ctr, ArtKey.Mode.Opaque);
             Add("platform",   ctr);
             Add("spike",      bot);
             Add("pool",       ctr);      // optional continuous death-liquid (replaces spikes if present)
@@ -58,7 +58,22 @@ namespace Velocity
             Add("feather",    ctr);
             Add("goal",       bot);
             Add("enemy",      ctr);
+            Add("enemy-flyer", ctr);
+            Add("enemy-spiky", ctr);
+            Add("saw",        ctr);
+            Add("overhang",   ctr);
+            Add("wall",       ctr, ArtKey.Mode.Opaque);
+            Add("ground-edge", ctr);
+            Add("fg-mist",    ctr);
+            Add("boost-pad",  ctr);
+            Add("dash-orb",   ctr);
             Add("bg-moon",    ctr);
+            Add("bg-wind",    ctr);
+            Add("bg-mountain", bot);
+            Add("bg-rays",    ctr);
+            Add("bg-clouds",  ctr);
+            Add("bg-drape",   ctr);
+            Add("bg-arch",    bot);
             Add("bg-star",    ctr);
             Add("bg-swirl",   ctr);
             Add("bg-cypress", bot);

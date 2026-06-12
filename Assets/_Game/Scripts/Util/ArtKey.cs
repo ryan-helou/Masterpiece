@@ -12,7 +12,7 @@ namespace Velocity
     /// </summary>
     public static class ArtKey
     {
-        public enum Mode { Auto, Magenta, White, Checker }
+        public enum Mode { Auto, Magenta, White, Checker, Opaque }
 
         /// <summary>Guess the background type from a corner pixel (top-right).</summary>
         private static Mode Detect(Color32 c)
@@ -118,6 +118,10 @@ namespace Velocity
 
         private static void KeyOut(Texture2D tex, Mode mode)
         {
+            // full-bleed tiles (ground, wall) are art edge-to-edge: keying would eat their own
+            // pixels (a low-contrast wall is entirely "near the corner color"), so skip entirely
+            if (mode == Mode.Opaque) return;
+
             var px = tex.GetPixels32();
             Color32 c0 = px[px.Length - 1];   // top-right corner = background sample
             if (mode == Mode.Auto) mode = Detect(c0);

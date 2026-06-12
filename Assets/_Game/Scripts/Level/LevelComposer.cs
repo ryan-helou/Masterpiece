@@ -22,7 +22,7 @@ namespace Velocity
             H = height;
             D = new LevelDraw(Pad, height);
             X = 0;
-            D.Wall(0);
+            D.Bound(0);          // invisible left edge (no dark soil pillar)
             X = 1;
         }
 
@@ -230,6 +230,221 @@ namespace Velocity
             return this;
         }
 
+        // ===================== challenge chunks (Level-1 redesign) =====================
+        // Built from classic-platformer patterns: enemies own a zone the player must read
+        // (never loose mobs on open ground), every gap pairs a safe slow answer with a fast
+        // risky one, and timed hazards have fixed phases so a no-stop line always exists.
+
+        /// <summary>Spike gap onto a small patrolled island — read the patrol, then leap into
+        /// its window or stomp it on arrival. Chain a few for a rhythm section.</summary>
+        public LevelComposer MobIsle(int gap, int isle = 6, char mob = 'g')
+        {
+            Spikes(X, gap); X += gap;
+            Ground(X, isle);
+            D.Set(X + isle / 2, _floor, mob);
+            X += isle;
+            return this;
+        }
+
+        /// <summary>A low stone roof over stepping platforms — a full jump bonks the ceiling,
+        /// so you must feather short hops across the pit (variable jump height under pressure).</summary>
+        public LevelComposer TunnelHops(int count = 3, int pw = 2, int g = 2)
+        {
+            int region = count * pw + (count - 1) * g;
+            Spikes(X, region);
+            int x = X;
+            for (int k = 0; k < count; k++) { Plat(x, pw, _floor + 1); x += pw + g; }
+            for (int i = 1; i < region - 1; i++) D.Set(X + i, _floor + 4, '#');   // cave roof
+            X += region;
+            return this;
+        }
+
+        /// <summary>A spike pit with a saw sweeping vertically through the jump arc — leap when
+        /// the blade dips. The phase is fixed per column, so a no-stop line threads it every run.</summary>
+        public LevelComposer SawGap(int n = 6)
+        {
+            Spikes(X, n);
+            D.Set(X + n / 2, _floor + 2, 'S');
+            X += n;
+            return this;
+        }
+
+        /// <summary>A flyer bobs across the pit's jump line — slip past in a gap of its drift,
+        /// or stomp it mid-air and bounce the rest of the way (the fast line).</summary>
+        public LevelComposer FlyerGap(int n = 7)
+        {
+            Spikes(X, n);
+            D.Set(X + n / 2, _floor + 2, 'f');
+            X += n;
+            return this;
+        }
+
+        /// <summary>Two lanes: the low road is safe but slow (two spike hops under open sky);
+        /// the high road is a fast platform line — but a patroller owns the middle platform,
+        /// so the quick route costs a mid-air read. Falling off only costs time, not life.
+        /// The coin floats on the high road's jump arc, right above the patroller.</summary>
+        public LevelComposer HighRoad(int len = 18)
+        {
+            Ground(X, len);
+            D.Set(X + 5, _floor, '^');                  // low road: two clean hops,
+            D.Set(X + 11, _floor, '^');                 // nothing overhead to bonk
+            Plat(X + 1, 3, _floor + 3);                 // high road: mount...
+            Plat(X + 7, 3, _floor + 3);                 // ...cross the patrolled middle...
+            Plat(X + 13, 3, _floor + 3);                // ...and ride off the far end
+            D.Set(X + 8, _floor + 3, 'g');              // it owns the middle platform
+            D.Set(X + 8, _floor + 5, 'o'); Coins++;     // on the arc between platforms
+            X += len;
+            return this;
+        }
+
+        /// <summary>Descending steps with a patroller holding a landing — commitment hops where
+        /// each drop is a pre-read decision, then the descent feeds you speed.</summary>
+        public LevelComposer StairDown(int steps = 3, int run = 4, char mob = 'g')
+        {
+            for (int k = 0; k < steps; k++)
+            {
+                Ground(X, run);
+                if (k == steps / 2) D.Set(X + run / 2, _floor, mob);
+                X += run;
+                _floor = System.Math.Max(2, _floor - 2);
+            }
+            return this;
+        }
+
+        /// <summary>The climax — a gap no jump can clear alone: hit the swirl-ring, double-jump,
+        /// and thread past a sweeping saw on the way down. The coin hangs above the blade's arc
+        /// for the brave; the fast line and the coin line are the same line.</summary>
+        public LevelComposer RingSawGap(int n = 9, bool coin = true)
+        {
+            Spikes(X, n);
+            D.Set(X + 2, _floor + 3, 'j');
+            // the saw guards the DESCENT, not the apex — the boosted arc clears the sweep at
+            // its peak, so the timing read happens on the way down toward the landing
+            D.Set(X + n - 2, _floor + 2, 'S');
+            if (coin) { D.Set(X + n - 4, _floor + 6, 'o'); Coins++; }
+            X += n;
+            return this;
+        }
+
+        /// <summary>Victory lap: open ground taken at full tilt with single-tile spike hops —
+        /// finish the level fast and high instead of trudging to the flag.</summary>
+        public LevelComposer Runout(int len = 14)
+        {
+            Ground(X, len);
+            D.Set(X + len / 3, _floor, '^');
+            D.Set(X + 2 * len / 3, _floor, '^');
+            X += len;
+            return this;
+        }
+
+        // ================== signature chunks (Levels 2-4 redesign) ==================
+
+        /// <summary>A spark-pad over safe ground — the fling is pure joy here, so its speed is
+        /// learned before it's ever asked to carry you over death. The fling carries ~12 cells,
+        /// so the chunk must be long enough that the whole flight lands on THIS ground.</summary>
+        public LevelComposer BoostRun(int n = 16)
+        {
+            Ground(X, n);
+            D.Set(X + 1, _floor, 'k');
+            X += n;
+            return this;
+        }
+
+        /// <summary>Level 2's climax — THE REACH: two thin fingertip ledges stretched toward
+        /// each other across a void no single fling can cross, almost touching. Sprint out the
+        /// promontory, boost off its very tip, catch the divine spark (dash orb) hanging in the
+        /// gap, and dash the last almost-touching inch to the far fingertip. The coin glints on
+        /// the dash line just past the spark — the brave grab both in one breath.</summary>
+        public LevelComposer Reach(int n = 12, int tip = 3, bool coin = true)
+        {
+            Ground(X, 3); X += 3;                                  // the wrist: last solid ground
+            Spikes(X, tip);                                        // the near finger: a thin ledge over the void
+            for (int i = 0; i < tip; i++) D.Set(X + i, _floor - 1, '#');
+            D.Set(X + tip - 1, _floor, 'k');                       // spark-pad on the fingertip
+            X += tip;
+            Spikes(X, n);                                          // the gap that's never quite bridged
+            D.Set(X + n / 2, _floor + 2, 'd');                     // the spark, hanging mid-void
+            if (coin) { D.Set(X + n / 2 + 2, _floor + 2, 'o'); Coins++; }
+            X += n;
+            Spikes(X, tip);                                        // the far finger reaches back
+            for (int i = 0; i < tip; i++) D.Set(X + i, _floor - 1, '#');
+            X += tip;
+            return this;
+        }
+
+        /// <summary>Note-blocks on safe ground — bounce for free before bouncing for your life.</summary>
+        public LevelComposer NoteRun(int n = 8)
+        {
+            Ground(X, n);
+            D.Set(X + 2, _floor, 'n'); D.Set(X + 3, _floor, 'n');
+            D.Set(X + 5, _floor, 'n'); D.Set(X + 6, _floor, 'n');
+            X += n;
+            return this;
+        }
+
+        /// <summary>Pendulum blades skimming the floor — each swings its own fixed arc, so the
+        /// gaps between their sweeps are safe pockets and the no-stop line threads the rhythm.</summary>
+        public LevelComposer SwingAlley(int count = 2, int spacing = 7)
+        {
+            int region = count * spacing + spacing;
+            Ground(X, region);
+            for (int k = 0; k < count; k++) D.Set(X + spacing + k * spacing, _floor, 's');
+            X += region;
+            return this;
+        }
+
+        /// <summary>A spring at the foot of a sheer column — ride the full bounce and drift onto
+        /// its top. The Swing's answer to the wall-jump chimney.</summary>
+        public LevelComposer SpringTower(int rise = 5)
+        {
+            Ground(X, 3); D.Set(X + 1, _floor, 'b'); X += 3;
+            int newF = _floor + rise;
+            for (int y = 0; y < newF; y++) D.Set(X, y, '#');   // the column you bounce up beside
+            _floor = newF;
+            X += 1;
+            Ground(X, 5); X += 5;
+            return this;
+        }
+
+        /// <summary>Level 3's climax — a note-block chain over spikes with saws sweeping the
+        /// junction arcs. The bounce rhythm is fixed; read the blades and keep the swing alive.
+        /// The coin sits mid-chain at bounce-apex height.</summary>
+        public LevelComposer NoteSawChain(int count = 4, bool coin = true)
+        {
+            int region = count * 4 + 2;
+            Spikes(X, region);
+            for (int k = 0; k < count; k++) { D.Set(X + 1 + k * 4, _floor - 1, 'n'); D.Set(X + 2 + k * 4, _floor - 1, 'n'); }
+            for (int k = 1; k < count; k += 2) D.Set(X + k * 4, _floor + 4, 'S');
+            if (coin) { D.Set(X + 2 + (count / 2) * 4, _floor + 2, 'o'); Coins++; }
+            X += region;
+            return this;
+        }
+
+        /// <summary>Crumbling boards under a diving screamer — it plunges the moment you pass
+        /// beneath its perch, but it falls slower than you run. Stop and you die twice.</summary>
+        public LevelComposer DiveBridge(int count = 3)
+        {
+            int region = count * 4 - 2;
+            Spikes(X, region);
+            int x = X;
+            for (int k = 0; k < count; k++) { D.Set(x, _floor - 1, 'c'); D.Set(x + 1, _floor - 1, 'c'); x += 4; }
+            D.Set(X + region / 2, _floor + 5, 'z');
+            X += region;
+            return this;
+        }
+
+        /// <summary>Level 4's climax — grab the feather and drift a gap no jump can clear while
+        /// a screamer swoops the glide line. The coin floats late in the drift: hold the nerve.</summary>
+        public LevelComposer GlideGap(int n = 11, bool coin = true)
+        {
+            Ground(X, 2); D.Set(X + 1, _floor + 1, 'w'); X += 2;
+            Spikes(X, n);
+            D.Set(X + n / 2, _floor + 4, 'z');
+            if (coin) { D.Set(X + n - 3, _floor + 1, 'o'); Coins++; }
+            X += n;
+            return this;
+        }
+
         // ============================ wall jump ============================
 
         /// <summary>
@@ -254,6 +469,16 @@ namespace Velocity
             return this;
         }
 
+        /// <summary>A low overhang you must DUCK (hold Down) to slide under — safe ground below.
+        /// The ceiling 'T' tiles get a collider dropped just low enough that you can't pass standing.</summary>
+        public LevelComposer DuckTunnel(int len = 5)
+        {
+            Ground(X, len);
+            for (int i = 0; i < len; i++) D.Set(X + i, _floor + 1, 'T');   // low ceiling
+            X += len;
+            return this;
+        }
+
         /// <summary>Step the floor back down (you drop onto a lower ledge).</summary>
         public LevelComposer Drop(int amount)
         {
@@ -268,7 +493,7 @@ namespace Velocity
             Ground(X, 7);
             D.Goal(X + 3, _floor);
             X += 7;
-            D.Wall(X);
+            D.Bound(X);          // invisible right edge
             X += 1;
             return this;
         }

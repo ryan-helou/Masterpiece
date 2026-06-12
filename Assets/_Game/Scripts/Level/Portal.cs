@@ -28,7 +28,7 @@ namespace Velocity
             link.SetCooldown(0.6f);              // stop the exit from bouncing you back
             pc.Teleport(link.transform.position);
 
-            if (Sfx.Instance != null) Sfx.Instance.PlayWallJump();
+            if (Sfx.Instance != null) Sfx.Instance.PlayWarp();
             if (FX.Instance != null)
             {
                 FX.Instance.Burst(transform.position, Palette.UiAccent, 12, 6f);
