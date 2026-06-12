@@ -89,19 +89,21 @@ namespace Velocity
                 "Drift through the night — tap jump inside a swirl-ring for a second boost, then glide the long gaps.",
                 0.42f,
                 "#0a1530", "#14264f", "#20386b",
-                "#1d2b1a", "#3a5a2e", "#13223c",
+                "#1d2b1a", "#3a5a2e", "#0a100d",
                 "#ffe9b0", "#f4d35e", "#ffd23a", "#6fb7ff", "#ff4060")
                 .WithStyle(BackdropStyle.StarryNight, "#ffe27a", "#0c1a10").WithArt("Level1"),
 
-            // 2 — THE CREATION OF ADAM : "the reach" — precise gaps + spark boost-pads
-            PaintingTheme.Make("The Creation of Adam", "Michelangelo · 1512",
-                "Paintings/creation-of-adam",
-                "Bridge the gap. The spark-pads fling you across — almost touching is never enough.",
+            // 2 — THE GREAT WAVE OFF KANAGAWA : "the surge" — wave-pad flings + spray-pearl dashes.
+            // Warm timber = safe footing; Prussian blue + foam = the sea, which is death.
+            // Color budget: mostly beige/cream/white world — blue stays a sea-and-danger accent.
+            PaintingTheme.Make("The Great Wave off Kanagawa", "Katsushika Hokusai · 1831",
+                "Paintings/great-wave",
+                "Ride the surge — wave-pads fling you, spray pearls refill the dash. The sea is not a place to stand.",
                 0.40f,
-                "#241a14", "#3a2a1e", "#50392a",
-                "#6e4d35", "#9a6f48", "#3a2718",
-                "#ecc0a0", "#d24a37", "#f0c674", "#d98c5f", "#ff3b30")
-                .WithStyle(BackdropStyle.Fresco, "#fff0d2", "#7a5238").WithArt("Level2"),
+                "#cfc3a4", "#ddd2b4", "#e8dcc0",
+                "#7a5a34", "#c89b62", "#4a3520",
+                "#f4eedd", "#d24a37", "#e8c66a", "#7fa8c4", "#ff3b30")
+                .WithStyle(BackdropStyle.Wave, "#f4eedd", "#5a7a96").WithArt("Level2"),
 
             // 3 — THE SWING : momentum / pendulum — springs, note-blocks, swinging saws
             PaintingTheme.Make("The Swing", "Jean-Honoré Fragonard · 1767",

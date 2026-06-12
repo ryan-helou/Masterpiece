@@ -36,13 +36,29 @@ namespace Velocity
             float Wx(int c) => c + 0.5f;
             float Wy(int r) => (h - 1 - r) + 0.5f;     // cell-center world Y
 
-            // --- solid ground: merge horizontal runs per row ---
+            // --- solid ground: wide runs merge per row; single-width cells (chimney walls,
+            // pillars) merge VERTICALLY into one collider so wall slides glide instead of
+            // stuttering across per-cell box seams ---
+            var solo = new bool[w, h];
             MergeRuns(w, h, At, '#', (start, r, len) =>
             {
+                if (len == 1 && (At(start, r - 1) == '#' || At(start, r + 1) == '#'))
+                {
+                    solo[start, r] = true;
+                    return;
+                }
                 CreateSolid(root, start, r, len, Wx, Wy, At);
                 if (LevelArt.Get("ground") == null)
                     CreateCaps(root, start, len, r, At, Wx, Wy);
             });
+            for (int c = 0; c < w; c++)
+                for (int r = 0; r < h; )
+                {
+                    if (!solo[c, r]) { r++; continue; }
+                    int s = r;
+                    while (r < h && solo[c, r]) r++;
+                    CreateSolidColumn(root, c, s, r - s, Wx, Wy, At);
+                }
             // invisible world-edge bounds (collision, no art) and low duck-tunnel ceilings
             MergeRuns(w, h, At, 'B', (start, r, len) => CreateBoundary(root, start, r, len, Wy));
             MergeRuns(w, h, At, 'T', (start, r, len) => CreateDuckCeiling(root, start, r, len, Wx, Wy));
@@ -646,39 +662,17 @@ namespace Velocity
                 int mid = start + len / 2;
                 bool surface = At(mid, r - 1) != '#';
                 bool hollow = At(mid, r + 1) != '#';
-                if (plat != null && surface && hollow && len <= 5)
+                if (plat != null && surface && hollow && len <= 9)
                 {
+                    // covers the tunnel roofs too — a 1-thick elevated slab as bare grass tiles
+                    // read as a floating lawn; the frayed island art reads as a rock shelf
                     QuadSprite(root, "PlatformArt", new Vector3(cx, Wy(r) - 0.2f, 0f),
                         new Vector2(len + 0.7f, 1.5f), plat, Color.white, 0);
                     return;
                 }
 
-                // grass tile on each surface cell; where the ground is genuinely solid below, extend
-                // deep earth far down (off-screen) so the floor isn't a floating slab. Buried cells are
-                // covered by that deep earth, so we skip them. (All parented to ROOT to dodge the
-                // run's (len,1) collider scale.)
-                Color soilDeep = Palette.GroundEdge;   // per-theme deep earth (set in PaintingThemes)
-                var wallTile = LevelArt.Get("wall");
                 for (int c = start; c < start + len; c++)
-                {
-                    if (At(c, r - 1) == '#')                           // buried — covered by deep earth,
-                    {                                                  // but texture exposed vertical faces
-                        if (wallTile != null && (At(c - 1, r) != '#' || At(c + 1, r) != '#'))
-                            QuadSprite(root, "WallTile", new Vector3(Wx(c), Wy(r), 0f),
-                                new Vector2(1.02f, 1.02f), wallTile, Color.white, -2);
-                        continue;
-                    }
-                    QuadSprite(root, "GroundTile", new Vector3(Wx(c), Wy(r) - 0.05f, 0f),
-                        new Vector2(1.01f, 1.4f), tile, Color.white, 0);
-                    if (At(c, r + 1) == '#')                           // solid below → deep terrain
-                    {
-                        // flat, uniform soil that STARTS at the cell top (hidden behind the grass tile)
-                        // and runs far down — no internal texture seam, no grass/soil border line.
-                        float top = Wy(r) + 0.5f, bottom = -14f;
-                        Quad(root, "DeepSoil", new Vector3(Wx(c), (top + bottom) * 0.5f, 0f),
-                            new Vector2(1.04f, top - bottom), soilDeep, -3);
-                    }
-                }
+                    DrawGroundCell(root, c, r, Wx, Wy, At);
 
                 // painted lips where a surface run ends in open air (pit edges, ledge ends);
                 // the art faces LEFT, mirrored for the right end
@@ -707,6 +701,96 @@ namespace Velocity
             sr.sortingOrder = 0;
             var b = sr.sprite.bounds.size;
             vis.transform.localScale = new Vector3(1f / b.x, 1f / b.y, 1f);  // fill 1×1 local cell
+        }
+
+        /// <summary>Single-width vertical solid (chimney walls, pillars): ONE collider for the whole
+        /// column, so wall slides glide over a continuous surface instead of stuttering across
+        /// per-cell box seams. Visuals reuse the per-cell ground drawer.</summary>
+        private static void CreateSolidColumn(Transform root, int c, int rTop, int len,
+            System.Func<int, float> Wx, System.Func<int, float> Wy, System.Func<int, int, char> At)
+        {
+            float cy = (Wy(rTop) + Wy(rTop + len - 1)) * 0.5f;
+            var go = new GameObject("GroundCol");
+            go.transform.SetParent(root, false);
+            go.transform.position = new Vector3(Wx(c), cy, 0f);
+            go.transform.localScale = new Vector3(1f, len, 1f);
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = Vector2.one;
+            go.layer = GameLayers.Ground;
+
+            if (LevelArt.Get("ground") != null)
+            {
+                for (int r = rTop; r < rTop + len; r++) DrawGroundCell(root, c, r, Wx, Wy, At);
+                return;
+            }
+            var vis = new GameObject("GroundVis");
+            vis.transform.SetParent(go.transform, false);
+            var sr = vis.AddComponent<SpriteRenderer>();
+            sr.sprite = TextureFactory.BrushBand();
+            sr.color = Palette.Ground;
+            sr.sortingOrder = 0;
+            var b = sr.sprite.bounds.size;
+            vis.transform.localScale = new Vector3(1f / b.x, 1f / b.y, 1f);
+        }
+
+        /// <summary>Art visuals for one ground cell, shared by row runs and column solids:
+        /// grass tile on exposed tops, wall texture on exposed vertical faces, deep-earth fill
+        /// below. Tiles are MIRRORED on alternating cells and given a subtle warm tint cycle so
+        /// one repeating texture never reads as a stamped pattern — and the tints deliberately
+        /// pull the repeats away from blue, toward the painting's green/yellow/near-black.</summary>
+        private static void DrawGroundCell(Transform root, int c, int r,
+            System.Func<int, float> Wx, System.Func<int, float> Wy, System.Func<int, int, char> At)
+        {
+            var tile = LevelArt.Get("ground");
+            var wallTile = LevelArt.Get("wall");
+
+            if (At(c, r - 1) == '#')                               // buried — exposed faces get wall art
+            {
+                if (wallTile != null && (At(c - 1, r) != '#' || At(c + 1, r) != '#'))
+                {
+                    var wsr = QuadSprite(root, "WallTile", new Vector3(Wx(c), Wy(r), 0f),
+                        new Vector2(1.05f, 1.05f), wallTile, WallTint(c, r), -2);
+                    if (((c + r) & 1) == 1)                        // mirror the checkerboard
+                    { var s = wsr.transform.localScale; s.x = -s.x; wsr.transform.localScale = s; }
+                }
+                return;
+            }
+
+            var gsr = QuadSprite(root, "GroundTile", new Vector3(Wx(c), Wy(r) - 0.05f, 0f),
+                new Vector2(1.01f, 1.4f), tile, GroundTint(c), 0);
+            if ((c & 1) == 1)                                      // mirror every other column
+            { var s = gsr.transform.localScale; s.x = -s.x; gsr.transform.localScale = s; }
+
+            if (At(c, r + 1) == '#')                               // solid below → deep terrain
+            {
+                // flat, uniform soil that STARTS at the cell top (hidden behind the grass tile)
+                // and runs far down — no internal texture seam, no grass/soil border line.
+                float top = Wy(r) + 0.5f, bottom = -14f;
+                Quad(root, "DeepSoil", new Vector3(Wx(c), (top + bottom) * 0.5f, 0f),
+                    new Vector2(1.04f, top - bottom), Palette.GroundEdge, -3);
+            }
+        }
+
+        // multiplicative tints: suppress blue a touch, never boost it — repeated terrain drifts
+        // toward the painting's grass-greens and warm earth instead of a wall of cobalt
+        private static Color GroundTint(int c)
+        {
+            switch ((c * 7 + 3) % 3)
+            {
+                case 1:  return new Color(0.94f, 1f, 0.86f);
+                case 2:  return new Color(0.88f, 0.95f, 0.83f);
+                default: return Color.white;
+            }
+        }
+
+        private static Color WallTint(int c, int r)
+        {
+            switch ((c * 5 + r * 3) % 3)
+            {
+                case 1:  return new Color(0.82f, 0.86f, 0.72f);
+                case 2:  return new Color(0.74f, 0.78f, 0.66f);
+                default: return new Color(0.9f, 0.93f, 0.8f);
+            }
         }
 
         /// <summary>Invisible solid world-edge: collision only, no sprite (kills the dark soil pillar

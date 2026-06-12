@@ -54,8 +54,21 @@ namespace Velocity
             DelaySec = 0.42f, DelayFb = 0.38f, DelayMix = 0.30f,
         };
 
+        private static Mood Tide() => new Mood
+        {   // THE GREAT WAVE — heaving and vast: hirajoshi pentatonic plucks (koto-like)
+            // over a deep surging swell; the pulse rolls in twos like breakers
+            Name = "tide", Root = 293.66f,
+            Scale = new[] { 0, 2, 3, 7, 8 },
+            Chords = new[] { new[] { 0, 7, 12 }, new[] { -4, 3, 8 }, new[] { 0, 7, 12 }, new[] { -2, 5, 10 } },
+            Bpm = 72, RestProb = 0.42f,
+            MelodyWave = 2, MelodyDecay = 5f, MelodyGain = 0.06f,
+            Drone = new[] { 36.71f, 73.42f, 110f }, DroneGain = 0.12f,
+            PulseGain = 0.075f, PulseEvery = 2, ShimmerGain = 0.04f,
+            DelaySec = 0.46f, DelayFb = 0.4f, DelayMix = 0.3f,
+        };
+
         private static Mood Sacred() => new Mood
-        {   // CREATION OF ADAM — vast and reverent: slow Mixolydian organum, open fifths
+        {   // SACRED (fresco / chiaroscuro) — vast and reverent: slow Mixolydian organum, open fifths
             Name = "sacred", Root = 293.66f,
             Scale = new[] { 0, 2, 4, 5, 7, 9, 10 },
             Chords = new[] { new[] { 0, 7, 12 }, new[] { -2, 5, 10 }, new[] { 0, 7, 12 }, new[] { 5, 12, 17 } },
@@ -130,7 +143,7 @@ namespace Velocity
                 case BackdropStyle.Garden:      Queue(Waltz()); break;
                 case BackdropStyle.Scream:      Queue(Anxious()); break;
                 case BackdropStyle.Chiaroscuro: Queue(Sacred()); break;
-                case BackdropStyle.Wave:        Queue(Waltz()); break;
+                case BackdropStyle.Wave:        Queue(Tide()); break;
                 default:                        Queue(Night()); break;
             }
         }

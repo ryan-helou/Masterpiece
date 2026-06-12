@@ -350,23 +350,25 @@ namespace Velocity
             return this;
         }
 
-        /// <summary>Level 2's climax — THE REACH: two thin fingertip ledges stretched toward
-        /// each other across a void no single fling can cross, almost touching. Sprint out the
-        /// promontory, boost off its very tip, catch the divine spark (dash orb) hanging in the
-        /// gap, and dash the last almost-touching inch to the far fingertip. The coin glints on
-        /// the dash line just past the spark — the brave grab both in one breath.</summary>
-        public LevelComposer Reach(int n = 12, int tip = 3, bool coin = true)
+        /// <summary>Level 2's climax — THE CLAW: the great wave itself. Two thin crest-lips
+        /// reach toward each other across a sea no single fling can cross — the painting's
+        /// frozen moment, made playable. Sprint out the near lip, boost off its curling tip,
+        /// catch the first spray pearl on the fling line, dash, catch the second hanging
+        /// lower on the descent, and dash again to the far crest. The coin glints between
+        /// the pearls on the dash line — the brave thread all three in one breath.</summary>
+        public LevelComposer Claw(int n = 15, int tip = 3, bool coin = true)
         {
-            Ground(X, 3); X += 3;                                  // the wrist: last solid ground
-            Spikes(X, tip);                                        // the near finger: a thin ledge over the void
+            Ground(X, 3); X += 3;                                  // the last solid deck
+            Spikes(X, tip);                                        // the near crest: a thin foam lip
             for (int i = 0; i < tip; i++) D.Set(X + i, _floor - 1, '#');
-            D.Set(X + tip - 1, _floor, 'k');                       // spark-pad on the fingertip
+            D.Set(X + tip - 1, _floor, 'k');                       // wave-pad on the very tip
             X += tip;
-            Spikes(X, n);                                          // the gap that's never quite bridged
-            D.Set(X + n / 2, _floor + 2, 'd');                     // the spark, hanging mid-void
-            if (coin) { D.Set(X + n / 2 + 2, _floor + 2, 'o'); Coins++; }
+            Spikes(X, n);                                          // the open sea under the claw
+            D.Set(X + (2 * n) / 5, _floor + 2, 'd');               // first pearl, on the fling line
+            if (coin) { D.Set(X + n / 2 + 1, _floor + 2, 'o'); Coins++; }
+            D.Set(X + (3 * n) / 4, _floor + 1, 'd');               // second pearl, lower, on the descent
             X += n;
-            Spikes(X, tip);                                        // the far finger reaches back
+            Spikes(X, tip);                                        // the far crest reaches back
             for (int i = 0; i < tip; i++) D.Set(X + i, _floor - 1, '#');
             X += tip;
             return this;

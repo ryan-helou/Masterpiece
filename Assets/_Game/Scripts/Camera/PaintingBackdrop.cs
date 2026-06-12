@@ -466,6 +466,8 @@ namespace Velocity
 
         private void Wave(PaintingTheme t)
         {
+            if (LevelArt.Get("bg-fuji") != null || LevelArt.Get("bg-claw") != null) { WaveArt(t); return; }
+
             Sky(t.SkyNear, new Color(0.86f, 0.82f, 0.72f));
             var sky = Locked("Fuji");
             Vector3 f = new Vector3(_halfW * 0.05f, -_halfH * 0.12f, 20f);
@@ -479,6 +481,93 @@ namespace Velocity
                 Spr(layer, _disc, new Color(1f, 1f, 1f, 0.9f), new Vector3(x + 1.5f, _bMinY + 2.6f, 7f), Vector2.one * 0.7f, -58);
             }
             Motes(Color.white, 5, 0.2f, 0.82f);
+        }
+
+        // ---- imported-art Great Wave (Hokusai — the sea looms, the boats are empty) ----
+        private void WaveArt(PaintingTheme t)
+        {
+            Sky(t.SkyNear, t.Sky);
+
+            var fuji  = LevelArt.Get("bg-fuji");
+            var cloud = LevelArt.Get("bg-clouds");
+            var swell = LevelArt.Get("bg-swell");
+            var claw  = LevelArt.Get("bg-claw");
+            var boat  = LevelArt.Get("bg-boat");
+            var mist  = LevelArt.Get("fg-mist");
+
+            if (fuji != null)
+            {
+                // the still center of the print — small, distant, serene while the sea rages
+                var L = Par("Fuji", 0.94f);
+                int i = 0;
+                for (float x = _bMinX + 14f; x <= _bMaxX + 28f; x += 56f, i++)
+                    ArtSpr(L, fuji, new Color(1f, 1f, 1f, 0.9f), new Vector3(x, _bMinY + _halfH * 0.55f, 9.5f), 4.5f, -80);
+            }
+            if (cloud != null)
+            {
+                var L = Par("Clouds", 0.86f);
+                float w = AspectWidth(cloud, 2.8f);
+                int i = 0;
+                for (float x = _bMinX; x <= _bMaxX + w; x += w * 1.15f, i++)
+                    ArtSpr(L, cloud, new Color(1f, 1f, 1f, 0.7f),
+                        new Vector3(x, _bMinY + _halfH * (1.5f + 0.2f * Mathf.Sin(i * 2.1f)), 9f), 2.8f, -74);
+            }
+            if (swell != null)
+            {
+                // far rollers — a continuous heaving band along the horizon
+                var L = Par("Swell", 0.7f);
+                float w = AspectWidth(swell, 3f);
+                int i = 0;
+                for (float x = _bMinX - w; x <= _bMaxX + w; x += w * 0.92f, i++)
+                {
+                    var sr = ArtSpr(L, swell, Color.white, new Vector3(x, _bMinY + 1.6f, 8.5f), 3f, -68);
+                    var sw = sr.gameObject.AddComponent<Sway>(); sw.speed = 0.3f; sw.degrees = 0.9f; sw.phase = i * 1.4f;
+                }
+            }
+            if (boat != null)
+            {
+                // empty oshiokuri boats riding the far swell — pitched by the sea, nobody aboard
+                var L = Par("Boats", 0.58f);
+                int i = 0;
+                for (float x = _bMinX + 18f; x <= _bMaxX; x += 42f, i++)
+                {
+                    var holder = new GameObject("BoatH");
+                    holder.transform.SetParent(L, false);
+                    holder.transform.localPosition = new Vector3(x, _bMinY + 2.4f, 0f);
+                    var sw = holder.AddComponent<Sway>(); sw.speed = 0.45f; sw.degrees = 4f; sw.phase = i * 1.7f;
+                    ArtSpr(holder.transform, boat, Color.white, Vector3.zero, 2.2f, -62);
+                }
+            }
+            if (claw != null)
+            {
+                // the great claws rising behind the action — the sea reaching over the level
+                var L = Par("Claws", 0.5f);
+                int i = 0;
+                for (float x = _bMinX + 8f; x <= _bMaxX + 12f; x += 32f, i++)
+                {
+                    var holder = new GameObject("ClawH");
+                    holder.transform.SetParent(L, false);
+                    holder.transform.localPosition = new Vector3(x, _bMinY - 0.4f, 0f);
+                    var sw = holder.AddComponent<Sway>(); sw.speed = 0.25f; sw.degrees = 1.6f; sw.phase = i * 0.8f;
+                    // slightly translucent so the pale sky bleeds through — the claws loom
+                    // without turning the whole backdrop blue
+                    ArtSpr(holder.transform, claw, new Color(1f, 1f, 1f, 0.85f), new Vector3(0f, 0f, 8f), 6.5f + (i % 2) * 1.2f, -58);
+                }
+            }
+            if (mist != null)
+            {
+                // the famous spray — flecks of foam drifting in FRONT of the action
+                var L = Par("Spray", 1.25f);
+                float w = AspectWidth(mist, 2.4f);
+                int i = 0;
+                for (float x = _bMinX - w; x <= _bMaxX * 1.35f + w; x += w * 0.85f, i++)
+                {
+                    var sr = ArtSpr(L, mist, new Color(1f, 1f, 1f, 0.13f),
+                        new Vector3(x, _bMinY + 2.8f, -2f), 2.4f, 14);
+                    var sw = sr.gameObject.AddComponent<Sway>(); sw.speed = 0.3f; sw.degrees = 1.0f; sw.phase = i * 1.3f;
+                }
+            }
+            Motes(new Color(0.96f, 0.97f, 0.95f, 1f), 6, 0.18f, 0.85f);
         }
 
         private void LateUpdate()

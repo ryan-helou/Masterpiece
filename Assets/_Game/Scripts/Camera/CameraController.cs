@@ -12,9 +12,10 @@ namespace Velocity
         public float lookAhead = 1.8f;
         public float lookAheadSmooth = 6f;
         public Vector2 offset = new Vector2(0f, 1.0f);
-        public float lookDown = 2.4f;        // bias down when falling fast (see the landing)
-        public float lookUp = 1.1f;          // slight bias up when rising fast
-        public float vLookSmooth = 4.5f;
+        public float lookDown = 1.3f;        // bias down when falling fast (see the landing)
+        public float lookUp = 0.45f;         // slight bias up when rising fast
+        public float vLookSmooth = 2.8f;
+        public float fallLookDelay = 0.3f;   // only real drops engage look-down, never jump arcs
         public float maxShake = 0.6f;
         public float shakeDecay = 1.6f;
 
@@ -25,6 +26,7 @@ namespace Velocity
         private Vector3 _pos;          // smoothed base position (before shake)
         private float _curLookAhead;
         private float _curLookY;
+        private float _fallTime;
         private float _trauma;
         private float _shakeSeed;
 
@@ -78,13 +80,19 @@ namespace Velocity
                              Mathf.Clamp01(Mathf.Abs(_pc.Velocity.x) / 10f);
             _curLookAhead = Mathf.Lerp(_curLookAhead, targetLook, lookAheadSmooth * Time.deltaTime);
 
-            // bias vertically toward where you're heading so you can read the landing
+            // bias vertically toward where you're heading so you can read the landing.
+            // Gated behind a sustained-fall timer: an ordinary jump's fall phase (~0.25s) never
+            // engages it, so the camera doesn't bob on every hop — that read as "shaking" in
+            // the elevated sections, where the bounds clamp no longer hides vertical motion.
             float targetLookY = 0f;
             if (_pc != null)
             {
                 float vy = _pc.Velocity.y;
-                if (vy < -6f) targetLookY = -lookDown * Mathf.Clamp01((-vy - 6f) / 16f);
-                else if (vy > 6f) targetLookY = lookUp * Mathf.Clamp01((vy - 6f) / 16f);
+                _fallTime = vy < -6f ? _fallTime + Time.deltaTime : 0f;
+                if (vy < -9f && _fallTime > fallLookDelay)
+                    targetLookY = -lookDown * Mathf.Clamp01((-vy - 9f) / 16f);
+                else if (vy > 9f)
+                    targetLookY = lookUp * Mathf.Clamp01((vy - 9f) / 16f);
             }
             _curLookY = Mathf.Lerp(_curLookY, targetLookY, vLookSmooth * Time.deltaTime);
 
