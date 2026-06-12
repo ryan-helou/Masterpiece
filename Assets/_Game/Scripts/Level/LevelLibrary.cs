@@ -243,38 +243,46 @@ namespace Velocity
                 32.0, 52.0, c.Rows());
         }
 
-        // ---------------------------------------------- 2  THE CREATION OF ADAM
-        // "The reach" is the star: the spark-pad fling is learned over safe ground, developed
-        // over pits, then twisted at the climax — a gap where the fling alone falls short and
-        // only a mid-air dash closes the last almost-touching inch.
+        // ---------------------------------------------- 2  THE GREAT WAVE OFF KANAGAWA
+        // The surge is the star. Classic-platformer arc — teach, develop, twist, climax:
+        // the wave-pad fling is pure joy over safe planking first (Mario's "play with the
+        // toy before it can kill you"), then carries you over open sea; the spray pearl
+        // (mid-air dash refill) enters in act 3 and is rehearsed wider; the climax is
+        // THE CLAW — the painting's frozen moment made playable: a void no single fling
+        // can cross, boost off the curling lip, chain BOTH pearls, dash out from under
+        // the claw. Every solid surface is shipwreck timber; the blue sea is death.
         private static LevelDefinition Level2()
         {
             var c = new LevelComposer(16);
             c.Start(6)
-             // --- act 1: teach the fling ---
-             .Hops(new[] { 2, 3, 2 }).Rest(2)       // warmup platforms
-             .MobIsle(4, 6, 'g')                    // a patrolled landing to read
-             .BoostRun(16)                          // the spark-pad, over safe ground (full flight)
-             .BoostGap(9).Rest(5)                   // now it carries you over spikes
-             // --- act 2: develop at height ---
-             .SawGap(6)                             // blade-timed jump
-             .WallClimb(5, 2)                       // a taller chimney than Level 1's
-             .HopsCoin(new[] { 2, 3, 2 }, 2, 3)     // sky hops, coin on the high middle
-             .FlyerGap(6)                           // a flyer crosses the arc
-             .Drop(5)                               // commit to the fall
-             // --- act 3: the dash twist ---
-             .DashGap(7).Rest(2)                    // meet the mid-air refill orb
-             .MobIsle(5, 5, 'y')                    // spiked patroller, timing only
-             .PitCoin(6)                            // coin dangling low over the spikes
-             .BoostGap(10).Rest(3)                  // a longer fling, then a breath
-             // --- climax: the reach ---
-             .Reach(12)                             // fingertip to fingertip, spark between
+             // --- act 1: teach the surge (speed feels great before it's dangerous) ---
+             .Pit(3).Rest(2)                        // first chop — the friendliest gap
+             .Hops(new[] { 2, 3, 2 }).Rest(2)       // bobbing plank-rafts over the foam
+             .Gauntlet("g", 5)                      // a beach crab patrols the deck — stomp lesson
+             .BoostRun(16)                          // the wave-pad over safe planking: full flight, zero stakes
+             .BoostGap(9).Rest(4)                   // now the surge carries you over open sea
+             // --- act 2: develop on the rising swell ---
+             .MobIsle(4, 6, 'g').MobIsle(5, 5, 'g') // island rhythm: leap into the patrol's window
+             .SawGap(6)                             // a whirlpool sweeps the jump arc
+             .WallClimb(5, 2)                       // wall-jump up between two stacked hulls
+             .HopsCoin(new[] { 2, 3, 2 }, 2, 3)     // spray-top hops, coin on the high middle
+             .FlyerGap(6)                           // a gull cuts across the arc — slip by or stomp it
+             .BoostGap(11).Rest(3)                  // a longer fling at height
+             .Drop(5)                               // commit to the trough
+             // --- act 3: the dash twist (the pearl enters) ---
+             .DashGap(7).Rest(2)                    // meet the spray pearl: dash, refill, dash again
+             .MobIsle(5, 5, 'y')                    // a sea urchin holds the landing — timing only
+             .TunnelHops(3)                         // under a capsized hull: feathered hops or bonk
+             .PitCoin(6)                            // coin dangling low over the foam claws
+             .DashGap(8).Rest(3)                    // a wider pearl gap — the climax skill, rehearsed
+             // --- climax: THE CLAW ---
+             .Claw(15)                              // fling off the lip, chain both pearls, escape
              // --- victory lap ---
              .Runout(12)
              .End();
-            return new LevelDefinition("2", "The Creation of Adam",
-                "Bridge the gap. The spark-pads fling you across — almost touching is never enough.",
-                36.0, 56.0, c.Rows());
+            return new LevelDefinition("2", "The Great Wave off Kanagawa",
+                "Ride the surge — wave-pads fling you, spray pearls refill the dash. The sea is not a place to stand.",
+                38.0, 58.0, c.Rows());
         }
 
         // ---------------------------------------------- 3  THE SWING

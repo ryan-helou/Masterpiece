@@ -50,8 +50,9 @@ namespace Velocity
         public float wallSlideSpeed = 4f;       // gentle slide so you have time to think
         public float wallJumpX = 11.5f;         // push away from the wall
         public float wallJumpY = 18f;           // and up (bumped for the stronger gravity)
-        public float wallJumpLockTime = 0.13f;  // briefly ignore input so the push-off sticks
-        public float wallCoyoteTime = 0.1f;     // grace just after leaving a wall
+        public float wallJumpLockTime = 0.09f;  // briefly ignore input so the push-off sticks
+        public float wallCoyoteTime = 0.12f;    // grace just after leaving a wall
+        public float wallCatchDamp = 90f;       // how fast a rising grab bleeds upward speed
 
         [Header("Feel")]
         public bool enableCornerCorrect = true; // slip past clipped ledge corners instead of bonking
@@ -419,9 +420,12 @@ namespace Velocity
                     _ducking = _grounded && (wantDown || !canStand);
                     ApplyDuckCollider(_ducking);
 
-                    // gripping a wall: airborne, pressing into a wall, and falling
+                    // gripping a wall: airborne and touching it — a neutral stick still grips
+                    // (only pressing AWAY refuses the wall), and a slow rise can soft-catch, so
+                    // chimney rhythm doesn't demand frame-perfect stick flips
                     bool wallSlide = enableWallJump && !_grounded && _wallDir != 0 &&
-                                     Mathf.Abs(mx) > 0.1f && Mathf.Sign(mx) == _wallDir && vel.y < 0.5f;
+                                     (Mathf.Abs(mx) <= 0.1f || Mathf.Sign(mx) == _wallDir) &&
+                                     vel.y < 3f;
 
                     // horizontal (briefly suppressed after a wall jump so the push-off sticks)
                     if (_wallJumpLock <= 0f)
@@ -474,7 +478,9 @@ namespace Velocity
                         float maxFall = _power == PowerUp.Glide ? maxFallSpeed * glideMaxFallMult : maxFallSpeed;
                         if (vel.y < -maxFall) vel.y = -maxFall;
 
-                        // wall slide clamps the fall to give you time to read it
+                        // wall slide: a rising grab bleeds its lift into the wall (soft catch,
+                        // no bonk-and-wait), and the fall clamps so you have time to read it
+                        if (wallSlide && vel.y > 0f) vel.y = Mathf.MoveTowards(vel.y, 0f, wallCatchDamp * dt);
                         if (wallSlide && vel.y < -wallSlideSpeed) vel.y = -wallSlideSpeed;
                     }
 
@@ -698,9 +704,11 @@ namespace Velocity
         private void ProbeWalls()
         {
             var b = _col.bounds;
-            Vector2 size = new Vector2(0.1f, b.size.y * 0.7f);
-            bool left = Physics2D.OverlapBox(new Vector2(b.min.x - 0.05f, b.center.y), size, 0f, GameLayers.WallMask) != null;
-            bool right = Physics2D.OverlapBox(new Vector2(b.max.x + 0.05f, b.center.y), size, 0f, GameLayers.WallMask) != null;
+            // generous probes (Celeste grabs from ~2px away): forgiving wall detection beats
+            // demanding flush contact, and it stops seam flicker while sliding
+            Vector2 size = new Vector2(0.18f, b.size.y * 0.7f);
+            bool left = Physics2D.OverlapBox(new Vector2(b.min.x - 0.09f, b.center.y), size, 0f, GameLayers.WallMask) != null;
+            bool right = Physics2D.OverlapBox(new Vector2(b.max.x + 0.09f, b.center.y), size, 0f, GameLayers.WallMask) != null;
             _wallDir = right ? 1 : (left ? -1 : 0);
         }
 

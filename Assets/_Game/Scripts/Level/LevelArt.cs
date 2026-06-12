@@ -76,6 +76,10 @@ namespace Velocity
             Add("bg-arch",    bot);
             Add("bg-star",    ctr);
             Add("bg-swirl",   ctr);
+            Add("bg-fuji",    bot);
+            Add("bg-swell",   ctr);
+            Add("bg-claw",    bot);
+            Add("bg-boat",    ctr);
             Add("bg-cypress", bot);
             Add("bg-village", bot);
             Add("bg-hills",   bot);
