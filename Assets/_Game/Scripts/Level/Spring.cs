@@ -24,7 +24,7 @@ namespace Velocity
 
             _cooldown = 0.25f;
             p.LaunchUp(launchVelocity);
-            if (Sfx.Instance != null) Sfx.Instance.PlayJump();
+            if (Sfx.Instance != null) Sfx.Instance.PlaySpring();
             if (FX.Instance != null) FX.Instance.JumpPuff(transform.position);
         }
     }

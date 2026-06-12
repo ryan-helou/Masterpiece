@@ -440,9 +440,22 @@ namespace Velocity
             _mainMenu = MenuRoot("MainMenu");
             var t = _mainMenu.transform;
 
-            UIFactory.LabelAt(t, "MASTERPIECE", 130, Palette.UiText,
-                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -150), new Vector2(1200, 150),
-                TextAnchor.UpperCenter, FontStyle.Bold);
+            // painted wordmark if one exists (Resources/UI/logo, magenta-keyed like level art),
+            // otherwise the plain text title
+            var logo = ArtKey.Load("UI/logo", ArtKey.Mode.Auto, new Vector2(0.5f, 0.5f));
+            if (logo != null)
+            {
+                var lrt = UIFactory.Rect(t, "Logo");
+                UIFactory.Place(lrt, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                    new Vector2(0, -40), new Vector2(1100, 250));
+                var img = lrt.gameObject.AddComponent<Image>();
+                img.sprite = logo;
+                img.preserveAspect = true;
+            }
+            else
+                UIFactory.LabelAt(t, "MASTERPIECE", 130, Palette.UiText,
+                    new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -150), new Vector2(1200, 150),
+                    TextAnchor.UpperCenter, FontStyle.Bold);
             UIFactory.LabelAt(t, "a speedrun platformer", 34, Palette.UiAccent,
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -290), new Vector2(1200, 50),
                 TextAnchor.UpperCenter, FontStyle.Italic);

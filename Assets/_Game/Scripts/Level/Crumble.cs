@@ -68,6 +68,7 @@ namespace Velocity
             _col.enabled = false;
             transform.position = _home;
             if (_sr != null) { var c = _solidColor; c.a = 0.12f; _sr.color = c; }
+            if (Sfx.Instance != null) Sfx.Instance.PlayCrumble();
             if (FX.Instance != null) FX.Instance.Burst(transform.position, _solidColor, 8, 4f, 0.14f, 0.5f);
         }
 

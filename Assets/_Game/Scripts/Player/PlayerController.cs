@@ -628,7 +628,7 @@ namespace Velocity
             _ducking = false;
             ApplyDuckCollider(false);
             _airDashesLeft = 0;
-            if (Sfx.Instance != null) Sfx.Instance.PlayDash();      // downward whoosh
+            if (Sfx.Instance != null) Sfx.Instance.PlaySlam();      // downward whoosh + rumble
             if (FX.Instance != null) FX.Instance.DashPuff(transform.position, 0);
             SetVisualScale(new Vector3(0.66f, 1.34f, 1f));          // stretch tall as you commit
         }
@@ -681,7 +681,7 @@ namespace Velocity
             _grounded = false;
             _airDashesLeft = maxAirDashes;
             AddCombo();
-            if (Sfx.Instance != null) Sfx.Instance.PlayWallJump();
+            if (Sfx.Instance != null) Sfx.Instance.PlayRing();
             if (FX.Instance != null) FX.Instance.JumpPuff(FeetPos());
             SetVisualScale(new Vector3(0.8f, 1.2f, 1f));
         }

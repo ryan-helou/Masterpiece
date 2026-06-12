@@ -36,7 +36,11 @@ namespace Velocity
             switch (_state)
             {
                 case State.Idle:
-                    if (PlayerOnTop()) { _state = State.Shaking; _timer = shakeTime; }
+                    if (PlayerOnTop())
+                    {
+                        _state = State.Shaking; _timer = shakeTime;
+                        if (Sfx.Instance != null) Sfx.Instance.PlayCreak();
+                    }
                     break;
 
                 case State.Shaking:

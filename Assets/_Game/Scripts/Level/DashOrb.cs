@@ -43,7 +43,7 @@ namespace Velocity
 
             _cooldown = respawnDelay;
             if (_sr != null) { var c = _onColor; c.a = 0.15f; _sr.color = c; }
-            if (Sfx.Instance != null) Sfx.Instance.PlayWallJump();
+            if (Sfx.Instance != null) Sfx.Instance.PlayOrb();
             if (FX.Instance != null) FX.Instance.Burst(transform.position, Palette.UiAccent, 10, 6f, 0.16f, 0.45f);
         }
 

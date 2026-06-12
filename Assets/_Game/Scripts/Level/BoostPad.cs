@@ -24,7 +24,7 @@ namespace Velocity
 
             _cooldown = 0.25f;
             pc.Boost(velocity.x, velocity.y);
-            if (Sfx.Instance != null) Sfx.Instance.PlayDash();
+            if (Sfx.Instance != null) Sfx.Instance.PlayBoost();
             if (FX.Instance != null) FX.Instance.DashPuff(transform.position, velocity.x >= 0 ? 1 : -1);
         }
     }

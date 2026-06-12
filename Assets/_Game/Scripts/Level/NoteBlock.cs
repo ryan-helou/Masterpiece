@@ -33,7 +33,7 @@ namespace Velocity
             pc.LaunchUp(bounce);
             _cooldown = 0.2f;
             if (_sr != null) _sr.color = Palette.GoalGlow;
-            if (Sfx.Instance != null) Sfx.Instance.PlayJump();
+            if (Sfx.Instance != null) Sfx.Instance.PlayNote();
         }
     }
 }
