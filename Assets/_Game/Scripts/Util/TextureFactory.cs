@@ -111,6 +111,24 @@ namespace Velocity
             return ToSprite(tex, 16);
         }
 
+        /// <summary>Inverse radial mask: clear centre, alpha rising toward the corners — a
+        /// screen vignette. Tint with the scene's darkest color at low alpha.</summary>
+        public static Sprite Vignette(int size)
+        {
+            var tex = NewTex(size, size);
+            float c = (size - 1) / 2f;
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = (x - c) / c, dy = (y - c) / c;
+                    float d = Mathf.Sqrt(dx * dx + dy * dy);
+                    float a = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.62f, 1.28f, d));
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+                }
+            tex.Apply();
+            return ToSprite(tex, 16);
+        }
+
         /// <summary>Soft radial glow (alpha 1 at the centre falling to 0 at the edge). Tint to taste —
         /// stars, moons, sun-pools, fog, foam, light shafts.</summary>
         public static Sprite RadialGlow(int size, float power = 2.2f)

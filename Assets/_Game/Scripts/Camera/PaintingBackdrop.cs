@@ -57,6 +57,15 @@ namespace Velocity
             veil.a = Mathf.Clamp01(theme.Scrim * 0.95f);
             Spr(scrimRoot, _box, veil, new Vector3(0f, 0f, 12f),
                 new Vector2(_halfW * 2.8f, _halfH * 2.8f), -45);
+
+            // ---- vignette: a breath of darkness at the frame's edges, over everything.
+            // Center stays clean; the corners settle — the museum-frame focus that makes a
+            // busy painted scene read as composed instead of wall-to-wall loud.
+            var vinRoot = Locked("Vignette");
+            Color edge = Color.Lerp(theme.Sky, Color.black, 0.7f);
+            edge.a = 0.3f;
+            Spr(vinRoot, TextureFactory.Vignette(96), edge, new Vector3(0f, 0f, -3f),
+                new Vector2(_halfW * 2.15f, _halfH * 2.3f), 30);
         }
 
         // ---- scaffolding ----
@@ -257,19 +266,24 @@ namespace Velocity
             }
             if (moon != null)
             {
-                var L = Par("Moon", 0.95f);
-                int i = 0;
-                for (float x = _bMinX + 8f; x <= _bMaxX + 24f; x += 44f, i++)
-                    Pulse(ArtSpr(L, moon, Color.white, new Vector3(x, _bMinY + _halfH * 2.0f, 7f), 5.5f, -76), 0.8f, 0.04f, 0.1f, i);
+                // ONE moon — the painting has one. It lives in the upper-right of the frame and
+                // renders ABOVE the atmosphere scrim: the single jewel the night keeps at full
+                // brightness while everything else recedes.
+                var L = Locked("Moon");
+                Pulse(ArtSpr(L, moon, Color.white,
+                    new Vector3(_halfW * 0.56f, _halfH * 0.56f, 7f), 5f, -44), 0.8f, 0.04f, 0.1f, 0f);
             }
             if (star != null)
             {
+                // a few HERO stars pierce the scrim at full glow; the rest twinkle behind it —
+                // the "a lot and a little": a quiet field with a handful of bright accents
                 var L = Par("Stars", 0.92f);
-                for (int i = 0; i < 14; i++)
+                for (int i = 0; i < 12; i++)
                 {
                     float x = Random.Range(_bMinX - 4f, _bMaxX + 8f);
                     float y = Random.Range(_bMinY + _halfH * 1.3f, _bMinY + _halfH * 2.5f);
-                    Pulse(ArtSpr(L, star, Color.white, new Vector3(x, y, 7f), Random.Range(0.8f, 1.6f), -74),
+                    Pulse(ArtSpr(L, star, Color.white, new Vector3(x, y, 7f),
+                            Random.Range(0.8f, 1.6f), i < 4 ? -44 : -74),
                         Random.Range(1.2f, 2.2f), 0.18f, 0.4f, i * 0.6f);
                 }
             }
