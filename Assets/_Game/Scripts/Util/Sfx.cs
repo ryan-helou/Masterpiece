@@ -28,6 +28,7 @@ namespace Velocity
         private AudioClip _jump, _dash, _land, _death, _finish, _click, _record;
         private AudioClip _coin, _stomp, _walljump, _powerup, _dashReady;
         private AudioClip _spring, _note, _boost, _orb, _warp, _crumble, _creak, _slam, _ring;
+        private AudioClip _tick, _bank;
         private AudioClip[] _combo;
 
         public static void Bootstrap()
@@ -71,6 +72,8 @@ namespace Velocity
             _crumble = Noise("crumble", 0.12f, 0.35f);
             _creak  = Sweep("creak", 95f, 70f, 0.24f, 0.25f, Wave.Saw);
             _ring   = Detune("ring", 987.77f, 4f, 0.22f, 0.30f);
+            _tick   = Sweep("tick", 1480f, 1480f, 0.035f, 0.12f, Wave.Sine);   // soft hazard-rhythm tick
+            _bank   = Arp("bank", new[] { 1046.5f, 1568f }, 0.16f, 0.22f, Wave.Triangle); // coins banked
 
             // pickups / progress
             _coin      = Arp("coin", new[] { 987.77f, 1318.5f }, 0.14f, 0.36f, Wave.Triangle);
@@ -115,6 +118,8 @@ namespace Velocity
         public void PlayCreak()     => Play(_creak, 0.8f, 0.06f);
         public void PlaySlam()      => Play(_slam);
         public void PlayRing()      => Play(_ring);
+        public void PlayTick()      => Play(_tick, 0.7f, 0.015f);
+        public void PlayBank()      => Play(_bank, 1f, 0.02f);
         public void PlayCombo(int n) { if (_combo != null) Play(_combo[Mathf.Clamp(n, 0, _combo.Length - 1)]); }
 
         /// <summary>Retune the musical SFX (coin, note-block, ring, orb, fanfares) to the score

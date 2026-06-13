@@ -25,7 +25,7 @@ namespace Velocity
             if (other.GetComponentInParent<PlayerController>() == null) return;
             _taken = true;
 
-            if (GameManager.Instance != null) GameManager.Instance.OnCoinCollected();
+            if (GameManager.Instance != null) GameManager.Instance.OnCoinGrabbed();
             if (Sfx.Instance != null) Sfx.Instance.PlayCoin();
             if (FX.Instance != null)
             {

@@ -15,6 +15,9 @@ namespace Velocity
         public float phaseOffset = 0f;
 
         public Vector2 Velocity { get; private set; }
+        /// <summary>Signed position along the axis, -1..1 (0 = centre, ±1 = the sweep extremes).
+        /// A telegraph reads this to ramp a glow / tick as the blade nears a dangerous extreme.</summary>
+        public float Extent { get; private set; }
 
         private Rigidbody2D _rb;
         private Vector2 _origin;
@@ -33,7 +36,9 @@ namespace Velocity
         {
             float w = speed / Mathf.Max(0.01f, distance);   // angular speed so peak ~= speed
             _t += w * Time.fixedDeltaTime;
-            Vector2 newPos = _origin + axis.normalized * (Mathf.Sin(_t) * distance);
+            float s = Mathf.Sin(_t);
+            Extent = s;
+            Vector2 newPos = _origin + axis.normalized * (s * distance);
             Velocity = (newPos - _rb.position) / Time.fixedDeltaTime;
             _rb.MovePosition(newPos);
         }

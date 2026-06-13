@@ -41,7 +41,7 @@ namespace Velocity
         private Overworld _overworld;
         private int _lastNode;            // gallery frame to return to
 
-        private int _coinsCollected, _coinsTotal;
+        private int _coinsCollected, _coinsTotal, _coinsPending;
         private int _deaths;
         private int _lives;
         private bool _hitstopActive;
@@ -171,6 +171,7 @@ namespace Velocity
             _killY = _built.Bounds.min.y - 4f;
             _coinsTotal = _built.CoinCount;
             _coinsCollected = 0;
+            _coinsPending = 0;
 
             var bg = new GameObject("Backdrop").AddComponent<PaintingBackdrop>();
             bg.transform.SetParent(_built.Root, false);
@@ -220,7 +221,10 @@ namespace Velocity
                 label = $"<color=#{gold}>RUN {_runLocalIndex + 1}/{n}</color>  •  {def.DisplayName}";
             }
             _ui.SetHudLevel(label, Leaderboard.HasCompleted(def.Id) ? best : (double?)null);
-            _ui.SetHudCoins(_coinsCollected, _coinsTotal);
+            // live medal-pace tint on the clock — single runs only (a full run's clock is cumulative)
+            if (_runMode == RunMode.Single) _ui.SetPace(def.GoldTime, def.SilverTime);
+            else _ui.SetPace(0, 0);
+            _ui.SetHudCoins(_coinsCollected, _coinsPending, _coinsTotal);
             _ui.SetHudDeaths(_deaths);
             _ui.SetHudLives(0, false);
             _ui.SetHudPower(PowerUp.None, 0f);
@@ -272,10 +276,25 @@ namespace Velocity
             _ui.ShowPause(true);
         }
 
-        public void OnCoinCollected()
+        // Celeste-style banking: a grabbed coin is PENDING until you next touch safe ground —
+        // die first (a full-run respawn) and it's forfeit. Grabbing while already grounded banks
+        // at once. (In single-level mode a death reloads the level, so this is the full-run hook.)
+        public void OnCoinGrabbed()
         {
-            _coinsCollected++;
-            _ui.SetHudCoins(_coinsCollected, _coinsTotal);
+            _coinsPending++;
+            _ui.SetHudCoins(_coinsCollected, _coinsPending, _coinsTotal);
+            if (_player != null && _player.Grounded) BankCoins();
+        }
+
+        public void OnPlayerLandedSafe() => BankCoins();
+
+        private void BankCoins()
+        {
+            if (_coinsPending <= 0) return;
+            _coinsCollected += _coinsPending;
+            _coinsPending = 0;
+            _ui.SetHudCoins(_coinsCollected, _coinsPending, _coinsTotal);
+            if (Sfx.Instance != null) Sfx.Instance.PlayBank();
         }
 
         /// <summary>A quick screen pulse used for portal/pipe warps.</summary>
@@ -310,6 +329,7 @@ namespace Velocity
             var def = LevelLibrary.Get(_levelIndex);
             double time = _timer.Elapsed;
 
+            _coinsCollected += _coinsPending; _coinsPending = 0;   // banked at the goal
             Coins.Submit(def.Id, _coinsCollected);
             bool hadBest = Leaderboard.TryGetBest(def.Id, out double prevBest);
             int rank = Leaderboard.Submit(def.Id, time, out bool isRecord);
@@ -387,6 +407,8 @@ namespace Velocity
             _dying = true;
             _deaths++;
             _ui.SetHudDeaths(_deaths);
+            _coinsPending = 0;                                  // forfeit un-banked coins
+            _ui.SetHudCoins(_coinsCollected, _coinsPending, _coinsTotal);
             // cancel any in-progress hit-stop so timeScale can't get stuck frozen
             _hitstopActive = false;
             Time.timeScale = 1f;

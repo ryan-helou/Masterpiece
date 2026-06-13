@@ -209,9 +209,10 @@ namespace Velocity
         // falling platforms (l), glide feathers (w), wall-climb chimneys, saws (S), mobs (g/f/y).
 
         // ---------------------------------------------- 1  STARRY NIGHT
-        // The ring is the star: introduce it safely, develop it among enemy-timed islands,
-        // twist it through a sweeping saw at the climax (~85%), then a fast victory lap.
-        // No flat dead stretches — every chunk asks for a read, a jump, or a timing call.
+        // The ring is the star: introduce it safely (~25%), DEVELOP it wider mid-level (~45%)
+        // so its rhythm never goes quiet, then twist it through a sweeping saw at the climax
+        // (~85%), then a fast victory lap. No flat dead stretches — every chunk asks for a
+        // read, a jump, or a timing call.
         private static LevelDefinition Level1()
         {
             var c = new LevelComposer(16);
@@ -226,6 +227,7 @@ namespace Velocity
              .MobIsle(4, 6, 'g').MobIsle(5, 5, 'g') // island rhythm: leap into the patrol's window
              .SawHall(1)                            // the blade shows itself over safe ground...
              .SawGap(6).Rest(3)                     // ...then guards a pit
+             .RingGap(8).Rest(3)                    // the ring returns, wider now — develop the double-jump
              .WallClimb(4, 2)                       // climb into the sky
              .HighRoad(18)                          // fast clean line above, slow spiky lane below
              .FlyerGap(6)                           // a flyer crosses your arc — slip by or stomp it
@@ -264,7 +266,7 @@ namespace Velocity
              // --- act 2: develop on the rising swell ---
              .MobIsle(4, 6, 'g').MobIsle(5, 5, 'g') // island rhythm: leap into the patrol's window
              .SawGap(6)                             // a whirlpool sweeps the jump arc
-             .WallClimb(5, 2)                       // wall-jump up between two stacked hulls
+             .Geyser(5)                             // a geyser spout launches you up the hull face
              .HopsCoin(new[] { 2, 3, 2 }, 2, 3)     // spray-top hops, coin on the high middle
              .FlyerGap(6)                           // a gull cuts across the arc — slip by or stomp it
              .BoostGap(9).Rest(3)                   // same fling, but now at height — a sea-fall on a miss
@@ -287,12 +289,12 @@ namespace Velocity
 
         // ---------------------------------------------- 3  THE SWING
         // Momentum is the star, and the pendulum is the verb. The signature toy is the
-        // swing-seat (a ridden pendulum platform whose velocity you inherit — leap at the
-        // far apex and FLY), taught over a small gap, developed over a chasm, and crowned
-        // at the climax by the painting's own swing. Around it: note-block bounce chains,
-        // a spring tower and a fountain-jet lift that climb the garden terraces, floor
-        // blades whose pockets are the no-stop line, and a warp-arbor route choice where
-        // the fast line skips a blade lane that hides a coin — speed or 100%, pick one.
+        // swing-seat (a ridden pendulum platform): time the board near its slow apex, ride
+        // the arc across the gap, and step off to the far ledge — taught over a small gap,
+        // developed over a chasm, and crowned at the climax by the painting's own swing.
+        // Around it: note-block bounce chains, a fountain-jet lift up the garden terrace,
+        // floor blades whose pockets are the no-stop line, and a warp-arbor route choice
+        // where the fast line skips a blade lane that hides a coin — speed or 100%, pick one.
         private static LevelDefinition Level3()
         {
             var c = new LevelComposer(20);
@@ -306,8 +308,7 @@ namespace Velocity
              .SwingAlley(2)                         // floor blades skim fixed arcs
              .MobIsle(4, 6, 'g')                    // patrolled landing in the hedge
              .SpringGap(6).Rest(2)                  // spring fling over thorns
-             .SpringTower(5)                        // ride the full bounce up the column
-             .FountainLift(5)                       // the jet carries you up the terrace
+             .FountainLift(5)                       // the fountain jet carries you up the terrace
              .HopsCoin(new[] { 2, 3, 2 }, 2, 3)     // sky hops, coin on the middle
              .FlyerGap(6)                           // a dove crosses the arc
              .SwingRide(12).Rest(2)                 // the long pendulum over the chasm
@@ -344,11 +345,13 @@ namespace Velocity
              .Hops(new[] { 2, 3, 2 }).Rest(2)       // warmup precision over the first spikes
              .Bridge(2).Rest(2)                     // crumble boards, short and survivable
              .FallBridge(2).Rest(2)                 // donut boards shake, then drop away
+             .DuckTunnel(4).Rest(2)                 // slide under a fallen beam — taught over safe ground
              .ScreamerPerch(9).Rest(2)              // meet the screamer over SAFE ground
              // --- act 2: the bridge dies over the fjord ---
              .MobIsle(4, 6, 'g')                    // patrolled island: leap into the window
              .DiveBridge(3)                         // crumble + a plunging screamer, combined
              .WallClimb(4, 2)                       // climb the fjord cliff
+             .DuckTunnel(5).Rest(2)                 // duck the cliff overhang at height (developed)
              .HopsCoin(new[] { 2, 4, 2 }, 2, 3)     // sky hops, coin 1 on the tall middle
              .FlyerGap(6).Rest(3)                   // a flyer crosses the arc at height, then a ledge
              .DragBelt(8)                           // the world drags you back toward the pit

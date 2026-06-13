@@ -19,6 +19,13 @@ namespace Velocity
         public float maxShake = 0.6f;
         public float shakeDecay = 1.6f;
 
+        [Header("Fling ease-out")]
+        public float flingSpeed = 15f;       // speed where the camera starts pulling back
+        public float flingSpeedMax = 27f;    // speed at full pull-back (boost-pad fling ~25)
+        public float flingZoom = 0.12f;      // extra orthographic size at full fling (+12%)
+        public float flingLook = 2.4f;       // extra look-ahead units at full fling
+        public float flingSmooth = 3.5f;     // how fast zoom/look ease in and out
+
         private Camera _cam;
         private Transform _target;
         private PlayerController _pc;
@@ -27,6 +34,8 @@ namespace Velocity
         private float _curLookAhead;
         private float _curLookY;
         private float _fallTime;
+        private float _baseOrtho;      // resting zoom; flings ease outward from this
+        private float _fling;          // 0..1 eased fling amount
         private float _trauma;
         private float _shakeSeed;
 
@@ -38,6 +47,7 @@ namespace Velocity
             _cam = GetComponent<Camera>();
             _pos = transform.position;
             _shakeSeed = 12.34f;
+            _baseOrtho = _cam.orthographicSize;
         }
 
         /// <summary>Add screenshake. 0..1 trauma; the effect scales with trauma squared.</summary>
@@ -74,9 +84,18 @@ namespace Velocity
         {
             if (_target == null) return;
 
+            // fling ease-out: at high speed (boost pad, dash, glide, ring) the camera pulls back
+            // and leads further so you can read where you're being thrown, then eases back in
+            float speed = _pc != null ? _pc.Velocity.magnitude : 0f;
+            float flingT = Mathf.Clamp01((speed - flingSpeed) / Mathf.Max(0.01f, flingSpeedMax - flingSpeed));
+            _fling = Mathf.Lerp(_fling, flingT, flingSmooth * Time.deltaTime);
+            if (_cam.orthographic)
+                _cam.orthographicSize = _baseOrtho * (1f + flingZoom * _fling);
+
+            float reach = lookAhead + flingLook * _fling;
             float targetLook = 0f;
             if (_pc != null && Mathf.Abs(_pc.Velocity.x) > 0.5f)
-                targetLook = Mathf.Sign(_pc.Velocity.x) * lookAhead *
+                targetLook = Mathf.Sign(_pc.Velocity.x) * reach *
                              Mathf.Clamp01(Mathf.Abs(_pc.Velocity.x) / 10f);
             _curLookAhead = Mathf.Lerp(_curLookAhead, targetLook, lookAheadSmooth * Time.deltaTime);
 
