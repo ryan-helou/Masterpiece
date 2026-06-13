@@ -555,6 +555,19 @@ namespace Velocity
             return this;
         }
 
+        /// <summary>Level 4's FINAL BOSS arena — THE SCREAM, made flesh. A wide safe floor (you
+        /// glide in over the climax pit and land here) to dodge the plunges on, with the giant
+        /// Scream-knot hovering high over the centre. Naturally sealed: the climax pit is behind
+        /// you and the Goal ahead (placed by End) stays sealed and dim until the boss is stomped
+        /// three times. No back wall — a full-height wall here would block the glide landing.</summary>
+        public LevelComposer ScreamBossArena(int n = 24)
+        {
+            Ground(X, n);
+            D.Set(X + n / 2, _floor + 7, 'Z');                // the Scream hovers high over the arena
+            X += n;
+            return this;
+        }
+
         /// <summary>Crumbling boards under a diving screamer — it plunges the moment you pass
         /// beneath its perch, but it falls slower than you run. Stop and you die twice.</summary>
         public LevelComposer DiveBridge(int count = 3)

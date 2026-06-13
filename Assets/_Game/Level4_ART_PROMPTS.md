@@ -404,6 +404,29 @@ body *removed* — pure sound made visible.
 - **Avoid:** ANY face, eyes, mouth, skull, hands, body, or humanoid silhouette (the entire reason
   this asset exists); a tidy spiral (it must writhe); cuteness; text.
 
+## 15b. `boss.jpeg` — THE SCREAM (final boss)  *(1:1 · pivot center · radial · transparent · ~768×768 · hovers, then PLUNGES; stomp its crown 3×)*  ★★★ the level's climax
+
+**The Screamer grown monstrous — Level 4's final boss.** Same law, same vocabulary as `enemy-diver`,
+but *colossal and apex*: the whole burning sky knotted into one looming dread. If you skip this asset
+the boss falls back to the Screamer art blown up — but a dedicated piece makes the finale land.
+
+- **Concept:** the Scream itself, made flesh, filling the arena sky. It hovers, locks onto you,
+  flashes, and plunges to crater the ground; stomp its crown three times to end it. No face, no
+  hands, no body — a *titan of sound*.
+- **Form:** a great roiling knot of the sky's bands — many more nested, wilder wavering ribbons than
+  the small Screamer, coiling inward to a **large hollow void-heart** (pure negative space, the
+  abyssal mouth of the scream — NOT a face). Several heavy tendrils lash off its underside; the
+  upper mass is a broad, clearly-rounded **stompable crown**. It should read as *overwhelming* — a
+  storm given a single furious shape — yet unmistakably the same creature as the small Screamer.
+- **Style:** the showpiece — maximal Munch: thick, frantic, hand-dragged ribbons, the canvas itself
+  seeming to scream. Bigger, hotter, angrier than any other asset.
+- **Palette:** ribbons `#c0301a`/`#d6431f`/`#e8662a` over a darker churning `#7a3b1a` core mass;
+  the void-heart deep `#05090f`; a fierce vermilion `#ff2d2d` rim and tendril-tips (lethal). A faint
+  cold `#16252e` may bruise the very base (the fjord's pull). No timber, no calm.
+- **Framing:** centered, crown up, tendrils down, generous magenta margin (it swells, dives, spins).
+- **Avoid:** ANY face/eyes/mouth/skull/hands/figure; symmetry or a tidy mandala (it must writhe and
+  lean); a friendly or cute read; text.
+
 ## 16. `enemy.jpeg` — Scream-Knot Crawler  *(1:1 · pivot bottom-center · faces RIGHT · transparent · ~448×448)*
 
 - **Concept:** the patrolling grunt — a small, low knot of the same anguish that has settled onto

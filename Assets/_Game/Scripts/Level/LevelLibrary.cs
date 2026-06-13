@@ -368,12 +368,12 @@ namespace Velocity
              .TheBridge(5).Rest(2)                  // THE BRIDGE: the signature dying sprint
              // --- climax: the leap into the sky ---
              .GlideGap(10)                          // feather-drift clears it clean; stomp the diving screamer for the fast line
-             // --- victory lap ---
-             .Runout(12)
+             // --- FINAL BOSS: the Scream itself ---
+             .ScreamBossArena(24)                   // dodge its plunges, stomp its crown 3× — the sealed exit opens on its death
              .End();
             return new LevelDefinition("4", "The Scream",
-                "The bridge is falling. Don't stop — the boards die under your feet, and the sky is the only way out.",
-                44.0, 64.0, c.Rows());
+                "The bridge is falling. Don't stop — then face the Scream itself: dodge its plunges and stomp it three times.",
+                58.0, 82.0, c.Rows());
         }
 
     }

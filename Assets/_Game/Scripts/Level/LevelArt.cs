@@ -77,6 +77,7 @@ namespace Velocity
             Add("conveyor",   ctr);      // belt tile, art faces RIGHT (mirrored for '<')
             Add("portal",     ctr);      // warp gate — L3's arbor arch / the Scream's reality tear
             Add("enemy-diver", ctr);
+            Add("boss",       ctr);      // Level 4 final boss — the giant Scream-knot (falls back to enemy-diver)
             // Level 3 (The Swing) gameplay pieces
             Add("note-block", ctr);
             Add("swing-seat", bot);                       // bench at the point, ropes rise above
