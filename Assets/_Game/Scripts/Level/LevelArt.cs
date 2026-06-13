@@ -64,7 +64,10 @@ namespace Velocity
             Add("enemy-spiky", ctr);
             Add("saw",        ctr);
             Add("overhang",   ctr);
-            Add("wall",       ctr, ArtKey.Mode.Opaque);
+            // prefer the dedicated cliff art (wall_new) over the legacy generic tile, under "wall"
+            var wallArt = ArtKey.Load(folder + "/wall_new", ArtKey.Mode.Opaque, ctr)
+                        ?? ArtKey.Load(folder + "/wall", ArtKey.Mode.Opaque, ctr);
+            if (wallArt != null) set.Sprites["wall"] = wallArt;
             Add("ground-edge", ctr);
             Add("fg-mist",    ctr, ArtKey.Mode.Auto, 0.08f);
             Add("boost-pad",  ctr);

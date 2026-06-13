@@ -919,9 +919,11 @@ namespace Velocity
         // Pair with the depth shading + edge rims in DrawGroundCell for 3-D form.
         private static Color WallTint(int c, int r)
         {
-            Color baseC = Color.Lerp(Palette.Ground, Palette.GroundCap, 0.5f);
-            float v = 0.84f + Rand01(c * 13 + r * 7) * 0.30f;     // 0.84..1.14
-            return new Color(baseC.r * v, baseC.g * v, baseC.b * v, 1f);
+            // wall_new is dedicated cliff art with its own darks + moonlit highlights, so render
+            // near full brightness — multiplying by the dark ground colour would crush it back to
+            // black. Faint per-column jitter so stacked pillars aren't identically stamped.
+            float v = 0.90f + Rand01(c * 13 + r * 7) * 0.12f;     // 0.90..1.02
+            return new Color(v, v, v * 0.97f, 1f);
         }
 
         // cached soil-shade gradient (rebuilt when the theme's deep-earth color changes)
