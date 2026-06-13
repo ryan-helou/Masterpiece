@@ -68,6 +68,7 @@ namespace Velocity
             var wallArt = ArtKey.Load(folder + "/wall_new", ArtKey.Mode.Opaque, ctr)
                         ?? ArtKey.Load(folder + "/wall", ArtKey.Mode.Opaque, ctr);
             if (wallArt != null) set.Sprites["wall"] = wallArt;
+            Add("deep-earth",  ctr, ArtKey.Mode.Opaque);   // optional under-platform body (else tiles the cliff art)
             Add("ground-edge", ctr);
             Add("fg-mist",    ctr, ArtKey.Mode.Auto, 0.08f);
             Add("boost-pad",  ctr);

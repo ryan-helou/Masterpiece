@@ -932,11 +932,12 @@ namespace Velocity
                 bool faceR = At(c + 1, r) != '#';
                 if (wallTile != null && (faceL || faceR))
                 {
-                    // depth from the surface: walls catch light up top and sink gently into shadow
-                    // as they descend, so a tall face reads as a 3-D wall, not one flat tiled bar
+                    // depth from the surface: the cliff catches light up top and sinks GENTLY into
+                    // shadow as it descends — a soft falloff floor so deep faces still read as cool
+                    // stone instead of the black mud the old hard curve crushed them to.
                     int depth = 1;
                     while (depth < 9 && At(c, r - depth) == '#') depth++;
-                    float dShade = Mathf.Lerp(1f, 0.74f, Mathf.Clamp01((depth - 1) / 7f));
+                    float dShade = Mathf.Lerp(1f, 0.86f, Mathf.Clamp01((depth - 1) / 7f));
                     Color wt = WallTint(c, r);
                     wt = new Color(wt.r * dShade, wt.g * dShade, wt.b * dShade, 1f);
 
@@ -945,6 +946,18 @@ namespace Velocity
                         new Vector2(1.05f, 1.05f), wallTile, wt, -2);
                     if (Rand01(c * 31 + r) < 0.5f)                 // hash flip (no checkerboard)
                     { var s = wsr.transform.localScale; s.x = -s.x; wsr.transform.localScale = s; }
+
+                    // cool moonlight (the painting's single top-left source) catches the air-facing
+                    // lip, so the column reads as rounded 3-D form, not a flat tiled bar. The left
+                    // lip takes the brighter rim, the right a fainter one. Thin + heavily downscaled
+                    // at runtime, so it lands as a glow on the edge, never a hard cartoon outline.
+                    var moon = Palette.Moving;                     // theme cool accent (cerulean here)
+                    if (faceL)
+                        Quad(root, "WallRimL", new Vector3(Wx(c) - 0.45f, Wy(r), 0f),
+                            new Vector2(0.18f, 1.06f), new Color(moon.r, moon.g, moon.b, 0.30f), -1);
+                    if (faceR)
+                        Quad(root, "WallRimR", new Vector3(Wx(c) + 0.45f, Wy(r), 0f),
+                            new Vector2(0.14f, 1.06f), new Color(moon.r, moon.g, moon.b, 0.16f), -1);
                 }
                 return;
             }
@@ -963,17 +976,46 @@ namespace Velocity
             QuadSprite(root, "SoilShade", new Vector3(Wx(c), Wy(r) - 0.34f + rise * 0.5f, 0f),
                 new Vector2(1.03f, 0.86f + rise), SoilShade(), Color.white, 1);
 
-            if (At(c, r + 1) == '#')                               // solid below → deep terrain
+            if (At(c, r + 1) == '#')                               // solid below → deep terrain body
             {
-                // extend the dark fill ONLY through the contiguous solid beneath this cell — never
-                // down through an open doorway/gap. A floating wall (chimney) must not drop a black
-                // bar into the air below it; only a column that reaches the true floor is bottomless.
+                // extend the fill ONLY through the contiguous solid beneath this cell — never down
+                // through an open doorway/gap. A floating wall (chimney) must not drop a bar into the
+                // air below it; only a column that reaches the true floor is bottomless.
                 int br = r;
                 while (br + 1 < _gridH && At(c, br + 1) == '#') br++;
                 float top = Wy(r) + 0.5f;
                 float bottom = (br >= _gridH - 1) ? -14f : Wy(br) - 0.5f;
-                Quad(root, "DeepSoil", new Vector3(Wx(c), (top + bottom) * 0.5f, 0f),
-                    new Vector2(1.04f, top - bottom), Palette.GroundEdge, -3);
+
+                // Paint the cross-section as real earth instead of one flat slab: a dark backing for
+                // the full depth, then a band of painterly soil tiles just under the surface — flipped
+                // per cell and darkening downward, so the body reads as packed earth/roots sinking
+                // into shadow rather than a single uniform colour. Auto-upgrades to dedicated
+                // deep-earth art when present; falls back to the cliff texture, then the flat slab.
+                var earth = LevelArt.Get("deep-earth") ?? LevelArt.Get("wall");
+                if (earth != null)
+                {
+                    Quad(root, "DeepSoil", new Vector3(Wx(c), (top + bottom) * 0.5f, 0f),
+                        new Vector2(1.04f, top - bottom), Palette.GroundEdge, -4);
+
+                    const float tileH = 1.4f;
+                    float band = Mathf.Min(5f, top - bottom);
+                    int k = 0;
+                    for (float y = top; y > top - band + 0.01f; y -= tileH, k++)
+                    {
+                        float h = Mathf.Min(tileH, y - (top - band));
+                        float cy = y - h * 0.5f;
+                        float v = Mathf.Lerp(0.8f, 0.3f, Mathf.Clamp01((top - cy) / band));
+                        var esr = QuadSprite(root, "DeepEarth", new Vector3(Wx(c), cy, 0f),
+                            new Vector2(1.06f, h), earth, new Color(v, v, v, 1f), -3);
+                        if (Rand01(c * 17 + k * 3) < 0.5f)
+                        { var s = esr.transform.localScale; s.x = -s.x; esr.transform.localScale = s; }
+                    }
+                }
+                else
+                {
+                    Quad(root, "DeepSoil", new Vector3(Wx(c), (top + bottom) * 0.5f, 0f),
+                        new Vector2(1.04f, top - bottom), Palette.GroundEdge, -3);
+                }
             }
         }
 
