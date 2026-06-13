@@ -346,8 +346,8 @@ namespace Velocity
             }
             Vector3 goalPos = _player != null ? _player.transform.position : Vector3.zero;
             if (FX.Instance != null) FX.Instance.Finish(goalPos);
-            _cam.AddShake(0.35f);
-            _ui.Flash(Palette.Goal, 0.22f);
+            _cam.AddShake(isRecord ? 0.5f : 0.35f);                              // a record hits harder
+            _ui.Flash(isRecord ? Palette.UiGold : Palette.Goal, isRecord ? 0.34f : 0.22f);
 
             if (_runMode == RunMode.FullRun)
             {
@@ -364,8 +364,23 @@ namespace Velocity
                 return;
             }
 
-            Time.timeScale = 1f;
+            // let the finish breathe: a brief slow-mo beat (longer on a record) so the burst and
+            // flash register before the results card. State flips now so gameplay is gated; the
+            // coroutine drives the beat then shows results.
             _state = GameState.Results;
+            StartCoroutine(FinishFlourish(def, time, hadBest, prevBest, isRecord, rank));
+        }
+
+        private IEnumerator FinishFlourish(LevelDefinition def, double time, bool hadBest,
+            double prevBest, bool isRecord, int rank)
+        {
+            if (!Settings.ReduceMotion)
+            {
+                Time.timeScale = isRecord ? 0.30f : 0.45f;     // drop into slow-mo; the goal burst drifts
+                yield return new WaitForSecondsRealtime(isRecord ? 0.85f : 0.5f);
+            }
+            Time.timeScale = 1f;                               // always restore (covers ReduceMotion + stray hitstop)
+
             _ui.ShowHud(false);
             var (world, local) = LevelLibrary.Locate(_levelIndex);
             bool hasNext = local < LevelLibrary.WorldAt(world).Levels.Count - 1;
