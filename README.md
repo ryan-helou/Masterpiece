@@ -51,8 +51,8 @@ Each canvas isn't just a skin — it sets the level's signature mechanic:
 | # | Painting | Artist | The twist |
 |---|----------|--------|-----------|
 | 1 | **Starry Night** | Vincent van Gogh, 1889 | Dreamy low gravity — tap jump inside a swirl-ring for a second boost, then **glide** the long gaps. |
-| 2 | **The Creation of Adam** | Michelangelo, 1512 | "The reach" — precise gaps and **spark boost-pads** that fling you across. Almost touching is never enough. |
-| 3 | **The Swing** | Jean-Honoré Fragonard, 1767 | Momentum & pendulum — **springs and note-blocks**; carry your speed through the garden. |
+| 2 | **The Great Wave off Kanagawa** | Katsushika Hokusai, 1831 | "The surge" — **wave-pads** fling you and **spray pearls** refill your dash across the open sea. Warm timber is safe; the blue water is death. |
+| 3 | **The Swing** | Jean-Honoré Fragonard, 1767 | The pendulum — board a **ridden swing-seat** at one apex and leap from the other, ride **fountain-jet** lifts up the terraces, and choose the warp **arbor** (fast) or the blade lane (coin). |
 | 4 | **The Scream** | Edvard Munch, 1893 | Disorientation — **collapsing bridges** over the fjord. The boards drop the instant you touch them, so don't stop. |
 
 ---
