@@ -289,9 +289,10 @@ namespace Velocity
 
         // ---------------------------------------------- 3  THE SWING
         // Momentum is the star, and the pendulum is the verb. The signature toy is the
-        // swing-seat (a ridden pendulum platform): time the board near its slow apex, ride
-        // the arc across the gap, and step off to the far ledge — taught over a small gap,
-        // developed over a chasm, and crowned at the climax by the painting's own swing.
+        // swing-seat (a ridden pendulum platform), and it gets a full teach -> develop ->
+        // showcase -> climax arc the way every mechanic in this game earns one: a gentle
+        // near-flush swing FIRST (the toy is joy before it can kill you), then over real
+        // briar, then the long high chasm, then the painting's own swing at the climax.
         // Around it: note-block bounce chains, a fountain-jet lift up the garden terrace,
         // floor blades whose pockets are the no-stop line, and a warp-arbor route choice
         // where the fast line skips a blade lane that hides a coin — speed or 100%, pick one.
@@ -299,19 +300,23 @@ namespace Velocity
         {
             var c = new LevelComposer(20);
             c.Start(5)
-             // --- act 1: teach (bounce first, then the swing) ---
+             // --- act 1: teach (bounce, then the swing — both eased in safely) ---
              .Hops(new[] { 2, 3 }).Rest(2)          // warmup precision over the briar
              .NoteRun(8)                            // meet the note-block, zero stakes
              .NoteBounce(3).Rest(2)                 // the blocks bridge a thorn pit
-             .SwingRide(9).Rest(3)                  // meet the swing: board, ride, leap
+             .SwingRide(5).Rest(3)                  // MEET the swing: it bridges this short gap
+                                                    // nearly flush — board off the ledge, ride,
+                                                    // step off, no leap-of-faith over death yet
              // --- act 2: the pendulum garden climbs ---
              .SwingAlley(2)                         // floor blades skim fixed arcs
              .MobIsle(4, 6, 'g')                    // patrolled landing in the hedge
+             .SwingRide(9).Rest(2)                  // DEVELOP: now the arc spans real briar —
+                                                    // hop on at the near apex, leap from the far
              .SpringGap(6).Rest(2)                  // spring fling over thorns
              .FountainLift(5)                       // the fountain jet carries you up the terrace
              .HopsCoin(new[] { 2, 3, 2 }, 2, 3)     // sky hops, coin on the middle
              .FlyerGap(6)                           // a dove crosses the arc
-             .SwingRide(12).Rest(2)                 // the long pendulum over the chasm
+             .SwingRide(12).Rest(2)                 // SHOWCASE: the long pendulum over the chasm
              .StairDown(2, 4, 'y')                  // hedgehog holds the descent
              // --- act 3: route choice, then the rhythm tightens ---
              .PortalSkip(16)                        // warp arbor or blade lane: speed vs coin
@@ -362,7 +367,7 @@ namespace Velocity
              .PitCoin(6)                            // coin 2 dangling low over the spikes
              .TheBridge(5).Rest(2)                  // THE BRIDGE: the signature dying sprint
              // --- climax: the leap into the sky ---
-             .GlideGap(11)                          // feather-drift; the screamer is the fast line
+             .GlideGap(10)                          // feather-drift clears it clean; stomp the diving screamer for the fast line
              // --- victory lap ---
              .Runout(12)
              .End();
