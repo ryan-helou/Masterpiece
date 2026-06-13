@@ -126,6 +126,8 @@ namespace Velocity
         private float _afterTimer;      // dash afterimage cadence
         private float _lastAirVelY;     // fall speed captured for landing impact
         private float _dustTimer;       // run-dust cadence
+        private float _stepTimer;       // footstep cadence (scales with run speed)
+        private float _scrapeTimer;     // wall-grind scuff cadence
         public int Combo { get; private set; }
         public int BestCombo { get; private set; }
 
@@ -568,23 +570,47 @@ namespace Velocity
                 _face.localPosition = new Vector3(0.12f * _facing, 0.18f, 0f);
             if (_usingArt) AnimateArt(vel);
 
-            // dust: kicked up while sprinting on the ground, or grinding down a wall
-            if (!Settings.ReduceMotion && FX.Instance != null)
+            // footfall + wall-grind feedback. Movement is the thing you do every frame, so it
+            // earns its own audio: footsteps while sprinting, a scuff while grinding a wall.
+            bool running = _grounded && !_dashing && Mathf.Abs(vel.x) > 6f;
+            bool sliding = _wallSliding;
+
+            // AUDIO — independent of ReduceMotion (that only gates particles)
+            if (running)
             {
-                bool running = _grounded && !_dashing && Mathf.Abs(vel.x) > 6f;
-                bool sliding = _wallSliding;
-                if (running || sliding)
+                _stepTimer -= Time.fixedDeltaTime;
+                if (_stepTimer <= 0f)
                 {
-                    _dustTimer -= Time.fixedDeltaTime;
-                    if (_dustTimer <= 0f)
-                    {
-                        _dustTimer = running ? 0.1f : 0.08f;
-                        int wd = _wallDir != 0 ? _wallDir : _lastWallDir;
-                        Vector3 at = running
-                            ? FeetPos()
-                            : new Vector3(_col.bounds.center.x + wd * _col.bounds.extents.x, _col.bounds.center.y, 0f);
-                        FX.Instance.Burst(at, Palette.GroundCap, 1, 1.6f, 0.08f, 0.22f, -5f, running ? 0.2f : 0.5f);
-                    }
+                    // stride quickens as you speed up (slow lope → quick patter)
+                    _stepTimer = Mathf.Lerp(0.33f, 0.19f, Mathf.InverseLerp(6f, maxRunSpeed, Mathf.Abs(vel.x)));
+                    if (Sfx.Instance != null) Sfx.Instance.PlayStep();
+                }
+            }
+            else _stepTimer = 0f;
+            if (sliding)
+            {
+                _scrapeTimer -= Time.fixedDeltaTime;
+                if (_scrapeTimer <= 0f)
+                {
+                    _scrapeTimer = 0.13f;
+                    if (Sfx.Instance != null) Sfx.Instance.PlayScrape();
+                }
+            }
+            else _scrapeTimer = 0f;
+
+            // DUST — kicked up while sprinting or grinding (a wall grind sheds a touch more debris)
+            if (!Settings.ReduceMotion && FX.Instance != null && (running || sliding))
+            {
+                _dustTimer -= Time.fixedDeltaTime;
+                if (_dustTimer <= 0f)
+                {
+                    _dustTimer = running ? 0.1f : 0.08f;
+                    int wd = _wallDir != 0 ? _wallDir : _lastWallDir;
+                    Vector3 at = running
+                        ? FeetPos()
+                        : new Vector3(_col.bounds.center.x + wd * _col.bounds.extents.x, _col.bounds.center.y, 0f);
+                    FX.Instance.Burst(at, Palette.GroundCap, sliding ? 2 : 1,
+                        sliding ? 2.0f : 1.6f, 0.08f, 0.22f, -5f, running ? 0.2f : 0.5f);
                 }
             }
 
