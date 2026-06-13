@@ -852,9 +852,17 @@ namespace Velocity
                 bool faceR = At(c + 1, r) != '#';
                 if (wallTile != null && (faceL || faceR))
                 {
-                    // the rock face at readable brightness (was silhouette-dark = a flat black bar)
+                    // depth from the surface: walls catch light up top and sink into shadow as they
+                    // descend, so a tall face reads as a 3-D wall instead of one flat tiled bar
+                    int depth = 1;
+                    while (depth < 9 && At(c, r - depth) == '#') depth++;
+                    float dShade = Mathf.Lerp(1f, 0.58f, Mathf.Clamp01((depth - 1) / 7f));
+                    Color wt = WallTint(c, r);
+                    wt = new Color(wt.r * dShade, wt.g * dShade, wt.b * dShade, 1f);
+
+                    // the timber face at readable brightness (was silhouette-dark = a flat black bar)
                     var wsr = QuadSprite(root, "WallTile", new Vector3(Wx(c), Wy(r), 0f),
-                        new Vector2(1.05f, 1.05f), wallTile, WallTint(c, r), -2);
+                        new Vector2(1.05f, 1.05f), wallTile, wt, -2);
                     if (Rand01(c * 31 + r) < 0.5f)                 // hash flip (no checkerboard)
                     { var s = wsr.transform.localScale; s.x = -s.x; wsr.transform.localScale = s; }
 
@@ -904,17 +912,16 @@ namespace Velocity
             return (h & 0xFFFFFF) / (float)0x1000000;
         }
 
-        // night-stone tint for wall faces: dim and cool-green so it reads as moonlit rock, but
-        // bright enough that the texture SHOWS (silhouette-black made the pillars flat bars).
-        // Pair with the moonlit/shadow edge rims in DrawGroundCell for 3-D form.
+        // Tint for wall faces, derived from the LEVEL'S OWN palette (warm timber for the wave,
+        // mossy rock for the night) instead of a hardcoded green that muddied the brown wood.
+        // Dim enough to read as a shadowed vertical face, bright enough that the texture SHOWS;
+        // per-cell brightness via hash so the tiled face never reads as a stamped pattern.
+        // Pair with the depth shading + edge rims in DrawGroundCell for 3-D form.
         private static Color WallTint(int c, int r)
         {
-            switch ((c * 5 + r * 3) % 3)
-            {
-                case 1:  return new Color(0.60f, 0.66f, 0.56f);
-                case 2:  return new Color(0.52f, 0.58f, 0.50f);
-                default: return new Color(0.66f, 0.72f, 0.60f);
-            }
+            Color baseC = Color.Lerp(Palette.Ground, Palette.GroundCap, 0.5f);
+            float v = 0.84f + Rand01(c * 13 + r * 7) * 0.30f;     // 0.84..1.14
+            return new Color(baseC.r * v, baseC.g * v, baseC.b * v, 1f);
         }
 
         // cached soil-shade gradient (rebuilt when the theme's deep-earth color changes)
