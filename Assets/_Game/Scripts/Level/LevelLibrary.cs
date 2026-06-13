@@ -267,7 +267,7 @@ namespace Velocity
              .WallClimb(5, 2)                       // wall-jump up between two stacked hulls
              .HopsCoin(new[] { 2, 3, 2 }, 2, 3)     // spray-top hops, coin on the high middle
              .FlyerGap(6)                           // a gull cuts across the arc — slip by or stomp it
-             .BoostGap(11).Rest(3)                  // a longer fling at height
+             .BoostGap(9).Rest(3)                   // same fling, but now at height — a sea-fall on a miss
              .Drop(5)                               // commit to the trough
              // --- act 3: the dash twist (the pearl enters) ---
              .DashGap(7).Rest(2)                    // meet the spray pearl: dash, refill, dash again
@@ -286,72 +286,86 @@ namespace Velocity
         }
 
         // ---------------------------------------------- 3  THE SWING
-        // Momentum is the star: bounce is taught for free, developed over spikes, lifted
-        // skyward by a spring tower, then twisted at the climax — a note-block chain whose
-        // junction arcs are swept by pendulum saws. Keep the swing alive or fall out of it.
+        // Momentum is the star, and the pendulum is the verb. The signature toy is the
+        // swing-seat (a ridden pendulum platform whose velocity you inherit — leap at the
+        // far apex and FLY), taught over a small gap, developed over a chasm, and crowned
+        // at the climax by the painting's own swing. Around it: note-block bounce chains,
+        // a spring tower and a fountain-jet lift that climb the garden terraces, floor
+        // blades whose pockets are the no-stop line, and a warp-arbor route choice where
+        // the fast line skips a blade lane that hides a coin — speed or 100%, pick one.
         private static LevelDefinition Level3()
         {
-            var c = new LevelComposer(18);
-            c.Start(6)
-             // --- act 1: teach the bounce ---
-             .Hops(new[] { 2, 3 }).Rest(2)          // warmup
-             .NoteRun(8)                            // note-blocks over safe ground
-             .NoteBounce(3).Rest(3)                 // now the blocks bridge a pit
-             // --- act 2: the pendulum garden ---
-             .SwingAlley(2)                         // blades skim the floor in fixed arcs
-             .MobIsle(4, 6, 'g')                    // patrolled landing
-             .SpringGap(6).Rest(2)                  // spring fling over spikes
+            var c = new LevelComposer(20);
+            c.Start(5)
+             // --- act 1: teach (bounce first, then the swing) ---
+             .Hops(new[] { 2, 3 }).Rest(2)          // warmup precision over the briar
+             .NoteRun(8)                            // meet the note-block, zero stakes
+             .NoteBounce(3).Rest(2)                 // the blocks bridge a thorn pit
+             .SwingRide(9).Rest(3)                  // meet the swing: board, ride, leap
+             // --- act 2: the pendulum garden climbs ---
+             .SwingAlley(2)                         // floor blades skim fixed arcs
+             .MobIsle(4, 6, 'g')                    // patrolled landing in the hedge
+             .SpringGap(6).Rest(2)                  // spring fling over thorns
              .SpringTower(5)                        // ride the full bounce up the column
+             .FountainLift(5)                       // the jet carries you up the terrace
              .HopsCoin(new[] { 2, 3, 2 }, 2, 3)     // sky hops, coin on the middle
-             .FlyerGap(6).Rest(3)                   // flyer in the arc, then a landing
-             .SawGap(7)                             // wide blade-timed jump at height
-             .StairDown(2, 4, 'y')                  // spiked patroller holds the descent
-             // --- act 3: tighten the rhythm ---
-             .SwingAlley(2, 6)                      // closer pendulums, tighter pockets
-             .SpringCoin().Rest(3)                  // coin at the apex, then a breath
-             // --- climax: the swing itself ---
-             .NoteSawChain(4)                       // bounce the chain through the blades
+             .FlyerGap(6)                           // a dove crosses the arc
+             .SwingRide(12).Rest(2)                 // the long pendulum over the chasm
+             .StairDown(2, 4, 'y')                  // hedgehog holds the descent
+             // --- act 3: route choice, then the rhythm tightens ---
+             .PortalSkip(16)                        // warp arbor or blade lane: speed vs coin
+             .NoteSawChain(3, false)                // bounce the chain through the blades
+             .SwingAlley(2, 6).Rest(3)              // closer pendulums, then a breath
+             // --- climax: THE SWING ---
+             .GrandSwing(16)                        // board at the bower, leap at full sweep
              // --- victory lap ---
              .Runout(12)
              .End();
             return new LevelDefinition("3", "The Swing",
-                "Keep the swing alive — bounce the note-blocks and springs, carry your momentum through the garden.",
-                40.0, 60.0, c.Rows());
+                "Ride the pendulum — board the swing at one apex, leap from the other, and the garden's rhythm is yours.",
+                42.0, 64.0, c.Rows());
         }
 
         // ---------------------------------------------- 4  THE SCREAM
-        // Urgency is the star: ground that dies under you. Crumble boards are re-taught fast,
-        // developed with donut drops at height, twisted by a diving screamer over the bridge,
-        // and the climax trades ground for sky — a feather glide through the swoop. The
-        // hardest level: stopping is the only real mistake.
+        // Urgency is the star: the ground itself dies under you, and the world will not wait.
+        // Classic teach → develop → twist → climax, all in The Scream's exclusive vocabulary:
+        // crumble boards and donut boards (ground that lies), the diving SCREAMER (taught over
+        // safe floor, then weaponized), the DRAG BELT (the world hauling you back into the pit
+        // — only this level reverses a conveyor), and THE TEAR (a warp gate where reality
+        // rips). The signature is THE BRIDGE — the painting's walkway as one long dying sprint
+        // under two plunging screamers — and the climax trades ground for sky entirely: a
+        // feather glide where the screamer mid-gap is both the threat AND the fast line (stomp
+        // its head for the bounce). The hardest level: stopping is the only real mistake.
         private static LevelDefinition Level4()
         {
             var c = new LevelComposer(18);
             c.Start(6)
-             // --- act 1: the ground gives way ---
-             .Hops(new[] { 2, 3, 2 }).Rest(2)       // warmup
-             .Bridge(2).Rest(3)                     // crumble boards, short and survivable
-             .MobIsle(4, 6, 'g')                    // patrolled landing
-             .FallBridge(2).Rest(2)                 // donut boards drop away
-             // --- act 2: pressure at height ---
-             .SawGap(7)                             // wide blade-timed jump
-             .WallClimb(4, 2)                       // climb the fjord wall
-             .HopsCoin(new[] { 2, 4, 2 }, 2, 3)     // sky hops, coin on the tall middle
-             .FlyerGap(6)                           // flyer in the arc
-             .DiveBridge(3)                         // the screamer plunges as you cross
-             .StairDown(2, 4, 'y')                  // spiked patroller on the way down
-             // --- act 3: no safe footing left ---
-             .TunnelHops(3)                         // roof-capped short hops
-             .PitCoin(7)                            // coin dangling low over the spikes
-             .Bridge(3).Rest(3)                     // crumble sprint, then the cliff edge
-             // --- climax: leap into the sky ---
-             .GlideGap(11)                          // feather-drift past the diving screamer
+             // --- act 1: the ground lies (every lesson over survivable stakes) ---
+             .Hops(new[] { 2, 3, 2 }).Rest(2)       // warmup precision over the first spikes
+             .Bridge(2).Rest(2)                     // crumble boards, short and survivable
+             .FallBridge(2).Rest(2)                 // donut boards shake, then drop away
+             .ScreamerPerch(9).Rest(2)              // meet the screamer over SAFE ground
+             // --- act 2: the bridge dies over the fjord ---
+             .MobIsle(4, 6, 'g')                    // patrolled island: leap into the window
+             .DiveBridge(3)                         // crumble + a plunging screamer, combined
+             .WallClimb(4, 2)                       // climb the fjord cliff
+             .HopsCoin(new[] { 2, 4, 2 }, 2, 3)     // sky hops, coin 1 on the tall middle
+             .FlyerGap(6).Rest(3)                   // a flyer crosses the arc at height, then a ledge
+             .DragBelt(8)                           // the world drags you back toward the pit
+             .StairDown(2, 4, 'y')                  // spiked patroller holds the descent
+             // --- act 3: reality tears, no safe footing left ---
+             .Warp(6)                               // THE TEAR: the only way on is through
+             .TunnelHops(3)                         // roof-capped feathered hops
+             .PitCoin(6)                            // coin 2 dangling low over the spikes
+             .TheBridge(5).Rest(2)                  // THE BRIDGE: the signature dying sprint
+             // --- climax: the leap into the sky ---
+             .GlideGap(11)                          // feather-drift; the screamer is the fast line
              // --- victory lap ---
              .Runout(12)
              .End();
             return new LevelDefinition("4", "The Scream",
-                "The bridge is falling. Don't stop — the boards drop the instant you set foot on them.",
-                42.0, 62.0, c.Rows());
+                "The bridge is falling. Don't stop — the boards die under your feet, and the sky is the only way out.",
+                44.0, 64.0, c.Rows());
         }
 
     }

@@ -434,6 +434,8 @@ namespace Velocity
 
         private void Garden(PaintingTheme t)
         {
+            if (LevelArt.Get("bg-canopy") != null || LevelArt.Get("bg-hedge") != null) { GardenArt(t); return; }
+
             Sky(t.SkyNear, t.Sky);
             var sky = Locked("Sun");
             Spr(sky, _glow, new Color(t.Glow.r, t.Glow.g, t.Glow.b, 0.4f),
@@ -443,8 +445,133 @@ namespace Velocity
             Motes(t.Player, 5, 0.2f, 0.82f);
         }
 
+        // ---- imported-art Garden (Fragonard — the overgrown garden, the swing empty) ----
+        private void GardenArt(PaintingTheme t)
+        {
+            Sky(t.SkyNear, t.Sky);
+
+            var rays   = LevelArt.Get("bg-rays");
+            var cloud  = LevelArt.Get("bg-clouds");
+            var canopy = LevelArt.Get("bg-canopy");
+            var swing  = LevelArt.Get("bg-swing");
+            var hedge  = LevelArt.Get("bg-hedge");
+            var fount  = LevelArt.Get("bg-fountain");
+            var urn    = LevelArt.Get("bg-urn");
+            var bloom  = LevelArt.Get("bg-bloom");
+            var mist   = LevelArt.Get("fg-mist");
+
+            if (rays != null)
+            {
+                // the painting's stolen sunlight: one warm shaft pouring from the upper-RIGHT —
+                // the direction of travel, so the whole run is a sprint toward the light
+                var L = Locked("Rays");
+                var sr = ArtSpr(L, rays, new Color(1f, 1f, 1f, 0.45f),
+                    new Vector3(_halfW * 0.4f, _halfH * 0.45f, 24f), _halfH * 1.8f, -86);
+                Pulse(sr, 0.4f, 0.03f, 0.08f, 0f);
+            }
+            if (cloud != null)
+            {
+                // rococo cotton clouds in the high keyhole of sky the canopy leaves open
+                var L = Par("Clouds", 0.88f);
+                float w = AspectWidth(cloud, 3f);
+                int i = 0;
+                for (float x = _bMinX; x <= _bMaxX + w; x += w * 1.2f, i++)
+                    ArtSpr(L, cloud, new Color(1f, 1f, 1f, 0.7f),
+                        new Vector3(x, _bMinY + _halfH * (1.7f + 0.15f * Mathf.Sin(i * 1.9f)), 9f), 3f, -78);
+            }
+            if (canopy != null)
+            {
+                // the leaf ceiling — a continuous band hanging over everything (top pivot, so it
+                // descends from above the frame even when the camera climbs the terraces)
+                var L = Par("Canopy", 0.85f);
+                float w = AspectWidth(canopy, 5f);
+                int i = 0;
+                for (float x = _bMinX - w; x <= _bMaxX + w; x += w * 0.9f, i++)
+                {
+                    var holder = new GameObject("CanopyH");
+                    holder.transform.SetParent(L, false);
+                    holder.transform.localPosition = new Vector3(x, _bMinY + _halfH * 2.55f, 0f);
+                    var sw = holder.AddComponent<Sway>(); sw.speed = 0.3f; sw.degrees = 0.8f; sw.phase = i * 1.1f;
+                    ArtSpr(holder.transform, canopy, Color.white, new Vector3(0f, 0f, 8.5f), 5f, -74);
+                }
+            }
+            if (swing != null)
+            {
+                // THE swing — empty, still swaying, hung far back among the boughs. Sparse on
+                // purpose: it should be found, not wallpapered. Top pivot = sways from the rope
+                // anchor like a real pendulum, slow and a little mournful.
+                var L = Par("Swing", 0.8f);
+                int i = 0;
+                for (float x = _bMinX + 20f; x <= _bMaxX; x += 64f, i++)
+                {
+                    var holder = new GameObject("SwingH");
+                    holder.transform.SetParent(L, false);
+                    holder.transform.localPosition = new Vector3(x, _bMinY + _halfH * 1.9f, 0f);
+                    var sw = holder.AddComponent<Sway>(); sw.speed = 0.42f; sw.degrees = 6f; sw.phase = i * 2.3f;
+                    ArtSpr(holder.transform, swing, new Color(1f, 1f, 1f, 0.85f), new Vector3(0f, 0f, 8f), 6.5f, -72);
+                }
+            }
+            if (hedge != null)
+            {
+                // two hedge bands: a hazier far wall and a darker near one — the garden's maze
+                // walls, rising from the floor line
+                var LFar = Par("HedgeFar", 0.68f);
+                float wF = AspectWidth(hedge, 4.5f);
+                for (float x = _bMinX - wF; x <= _bMaxX + wF; x += wF * 0.92f)
+                    ArtSpr(LFar, hedge, new Color(1f, 1f, 1f, 0.75f), new Vector3(x, _bMinY + 0.6f, 9f), 4.5f, -68);
+                var LNear = Par("Hedge", 0.55f);
+                float wN = AspectWidth(hedge, 3.2f);
+                for (float x = _bMinX - wN + 4f; x <= _bMaxX + wN; x += wN * 0.95f)
+                    ArtSpr(LNear, hedge, Color.white, new Vector3(x, _bMinY - 0.2f, 8f), 3.2f, -64);
+            }
+            if (fount != null)
+            {
+                // marble fountains punctuating the hedge line, far apart — landmarks, not noise
+                var L = Par("Fountains", 0.6f);
+                for (float x = _bMinX + 12f; x <= _bMaxX; x += 52f)
+                    ArtSpr(L, fount, Color.white, new Vector3(x, _bMinY + 0.1f, 7.5f), 4.2f, -62);
+            }
+            if (urn != null)
+            {
+                // stone urns between the fountains, offset so the two never stack
+                var L = Par("Urns", 0.5f);
+                for (float x = _bMinX + 34f; x <= _bMaxX; x += 52f)
+                    ArtSpr(L, urn, Color.white, new Vector3(x, _bMinY + 0.1f, 7f), 2.6f, -60);
+            }
+            if (bloom != null)
+            {
+                // rose clusters drifting at mid-height — the pink the painting is famous for
+                var L = Par("Blooms", 0.45f);
+                int i = 0;
+                for (float x = _bMinX + 8f; x <= _bMaxX + 6f; x += 26f, i++)
+                {
+                    var holder = new GameObject("BloomH");
+                    holder.transform.SetParent(L, false);
+                    holder.transform.localPosition = new Vector3(x, _bMinY + 3.4f + 1.1f * Mathf.Sin(i * 2.4f), 0f);
+                    var sw = holder.AddComponent<Sway>(); sw.speed = 0.5f; sw.degrees = 2.5f; sw.phase = i * 0.7f;
+                    ArtSpr(holder.transform, bloom, Color.white, new Vector3(0f, 0f, 6f), 1.8f, -58);
+                }
+            }
+            if (mist != null)
+            {
+                // drifting petals in FRONT of the action — barely-there, pure perfume
+                var L = Par("Petals", 1.25f);
+                float w = AspectWidth(mist, 2.2f);
+                int i = 0;
+                for (float x = _bMinX - w; x <= _bMaxX * 1.35f + w; x += w * 0.85f, i++)
+                {
+                    var sr = ArtSpr(L, mist, new Color(1f, 1f, 1f, 0.12f),
+                        new Vector3(x, _bMinY + 2.6f, -2f), 2.2f, 14);
+                    var sw = sr.gameObject.AddComponent<Sway>(); sw.speed = 0.28f; sw.degrees = 1.0f; sw.phase = i * 1.3f;
+                }
+            }
+            Motes(t.Player, 6, 0.18f, 0.85f);
+        }
+
         private void Scream(PaintingTheme t)
         {
+            if (LevelArt.Get("bg-skyband") != null || LevelArt.Get("bg-fjord") != null) { ScreamArt(t); return; }
+
             Sky(t.SkyNear, t.Sky);
             var sky = Locked("Bands");
             // two smooth bands of fire — no clutter
@@ -452,6 +579,89 @@ namespace Velocity
             Spr(sky, _glow, new Color(t.Sky.r, t.Sky.g, t.Sky.b, 0.4f), new Vector3(0, _halfH * 0.0f, 20f), new Vector2(_halfW * 3.4f, 3f), -87);
             Horizon(t.Motif, 0.5f);
             Motes(t.Glow, 4, 0.2f, 0.85f);
+        }
+
+        // ---- imported-art Scream (Munch — the burning sky writhes, the fjord swallows) ----
+        private void ScreamArt(PaintingTheme t)
+        {
+            Sky(t.SkyNear, t.Sky);
+
+            var sky      = LevelArt.Get("bg-skyband");
+            var fjord    = LevelArt.Get("bg-fjord");
+            var headland = LevelArt.Get("bg-headland");
+            var railing  = LevelArt.Get("bg-railing");
+            var mist     = LevelArt.Get("fg-mist");
+
+            if (sky != null)
+            {
+                // the famous bands of blood and fire writhing across the upper sky — two stacked
+                // ribbons, the lower one slower, both undulating so the whole heaven seems to breathe
+                var LHi = Par("SkyHi", 0.9f);
+                float wH = AspectWidth(sky, 4.5f);
+                int i = 0;
+                for (float x = _bMinX - wH; x <= _bMaxX + wH; x += wH * 0.9f, i++)
+                {
+                    var sr = ArtSpr(LHi, sky, new Color(1f, 1f, 1f, 0.95f),
+                        new Vector3(x, _bMinY + _halfH * 2.35f, 9f), 4.5f, -80);
+                    var sw = sr.gameObject.AddComponent<Sway>(); sw.speed = 0.18f; sw.degrees = 1.1f; sw.phase = i * 1.2f;
+                }
+                var LLo = Par("SkyLo", 0.82f);
+                float wL = AspectWidth(sky, 3.4f);
+                i = 0;
+                for (float x = _bMinX - wL + 5f; x <= _bMaxX + wL; x += wL * 0.92f, i++)
+                {
+                    var sr = ArtSpr(LLo, sky, new Color(1f, 1f, 1f, 0.8f),
+                        new Vector3(x, _bMinY + _halfH * 1.78f, 9.5f), 3.4f, -78);
+                    var sw = sr.gameObject.AddComponent<Sway>(); sw.speed = 0.13f; sw.degrees = 0.9f; sw.phase = i * 1.7f;
+                }
+            }
+            if (headland != null)
+            {
+                // the dark promontory across the water — Munch's far shore, low and brooding;
+                // bottom feathered so it dissolves into the fjord haze rather than floating
+                var L = Par("Headland", 0.74f);
+                float w = AspectWidth(headland, 3.6f);
+                for (float x = _bMinX - w; x <= _bMaxX + w; x += w * 0.94f)
+                    ArtSpr(L, headland, Color.white, new Vector3(x, _bMinY + 1.4f, 9f), 3.6f, -72);
+            }
+            if (fjord != null)
+            {
+                // the cold blue-black water heaving below the sky-fire — the death-colour of the
+                // level, kept to the horizon band so it never creeps up into the playfield
+                var L = Par("Fjord", 0.66f);
+                float w = AspectWidth(fjord, 3f);
+                int i = 0;
+                for (float x = _bMinX - w; x <= _bMaxX + w; x += w * 0.92f, i++)
+                {
+                    var sr = ArtSpr(L, fjord, Color.white, new Vector3(x, _bMinY + 0.5f, 8.5f), 3f, -68);
+                    var sw = sr.gameObject.AddComponent<Sway>(); sw.speed = 0.22f; sw.degrees = 0.7f; sw.phase = i * 1.5f;
+                }
+            }
+            if (railing != null)
+            {
+                // the walkway railing knifing in from the left in steep perspective — the single
+                // most iconic line in the painting. One long piece anchored to the lower-left,
+                // riding close to the camera so its diagonal rakes across the frame.
+                var L = Par("Railing", 0.5f);
+                float w = AspectWidth(railing, 6f);
+                for (float x = _bMinX - 2f; x <= _bMaxX + w; x += w * 0.98f)
+                    ArtSpr(L, railing, new Color(1f, 1f, 1f, 0.9f), new Vector3(x, _bMinY + 1.0f, 7.5f), 6f, -60);
+            }
+            if (mist != null)
+            {
+                // a thin haze of the sky's colour drifting in FRONT — the anxiety made visible,
+                // barely there so it never tints the gameplay read
+                var L = Par("Haze", 1.22f);
+                float w = AspectWidth(mist, 2.6f);
+                int i = 0;
+                for (float x = _bMinX - w; x <= _bMaxX * 1.35f + w; x += w * 0.85f, i++)
+                {
+                    var sr = ArtSpr(L, mist, new Color(1f, 0.86f, 0.6f, 0.11f),
+                        new Vector3(x, _bMinY + 2.8f, -2f), 2.6f, 14);
+                    var sw = sr.gameObject.AddComponent<Sway>(); sw.speed = 0.26f; sw.degrees = 1.1f; sw.phase = i * 1.3f;
+                }
+            }
+            Motes(t.Glow, 5, 0.18f, 0.85f);
         }
 
         private void Alpine(PaintingTheme t)

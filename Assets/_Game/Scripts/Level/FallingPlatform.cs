@@ -25,7 +25,7 @@ namespace Velocity
             _rb = GetComponent<Rigidbody2D>();
             _rb.bodyType = RigidbodyType2D.Kinematic;
             _col = GetComponent<Collider2D>();
-            _sr = GetComponent<SpriteRenderer>();
+            _sr = GetComponentInChildren<SpriteRenderer>();   // visual may be an art child
             _home = transform.position;
             if (_sr != null) _c0 = _sr.color;
         }
