@@ -196,6 +196,7 @@ namespace Velocity
             _wallJumpLock = 0f;
             _wallSliding = false;
             _ducking = false;
+            _sliding = false;
             _slamming = false;
             ApplyDuckCollider(false);
             Combo = 0;
@@ -387,7 +388,7 @@ namespace Velocity
             else if (_dashBufferTimer > 0f && _dashCdTimer <= 0f && (_grounded || _airDashesLeft > 0))
             {
                 _dashing = true;
-                _ducking = false; _slamming = false; ApplyDuckCollider(false);
+                _ducking = false; _sliding = false; _slamming = false; ApplyDuckCollider(false);
                 _dashTimer = dashDuration;
                 _dashDir = Mathf.Abs(mx) > 0.01f ? Mathf.Sign(mx) : _facing;
                 if (!_grounded) { _airDashesLeft--; AddCombo(); }
@@ -576,6 +577,8 @@ namespace Velocity
             Vector3 targetScale = Vector3.one;
             if (_slamming)
                 targetScale = new Vector3(0.7f, 1.3f, 1f);          // tucked + plummeting
+            else if (_sliding)
+                targetScale = new Vector3(1.46f, 0.5f, 1f);         // long and flat — a streaking slide
             else if (_ducking)
                 targetScale = new Vector3(1.28f, 0.62f, 1f);        // wide crouch
             else if (!_grounded && !_dashing)
@@ -686,6 +689,7 @@ namespace Velocity
         {
             _slamming = true;
             _ducking = false;
+            _sliding = false;
             ApplyDuckCollider(false);
             _airDashesLeft = 0;
             if (Sfx.Instance != null) Sfx.Instance.PlaySlam();      // downward whoosh + rumble
@@ -710,6 +714,7 @@ namespace Velocity
             _jumpBufferTimer = 0f;
             _coyoteTimer = 0f;
             _grounded = false;
+            _sliding = false;     // a slide-jump keeps your horizontal momentum (vel.x is untouched)
             if (Sfx.Instance != null) Sfx.Instance.PlayJump();
             if (FX.Instance != null) FX.Instance.JumpPuff(FeetPos());
             SetVisualScale(new Vector3(0.8f, 1.2f, 1f));
