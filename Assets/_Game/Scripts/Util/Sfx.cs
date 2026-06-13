@@ -28,7 +28,7 @@ namespace Velocity
         private AudioClip _jump, _dash, _land, _death, _finish, _click, _record;
         private AudioClip _coin, _stomp, _walljump, _powerup, _dashReady;
         private AudioClip _spring, _note, _boost, _orb, _warp, _crumble, _creak, _slam, _ring;
-        private AudioClip _tick, _bank;
+        private AudioClip _tick, _bank, _step, _scrape;
         private AudioClip[] _combo;
 
         public static void Bootstrap()
@@ -57,6 +57,10 @@ namespace Velocity
             _land     = Sweep("land", 180f, 110f, 0.07f, 0.28f, Wave.Triangle);
             _dash     = Sweep("dash", 240f, 70f, 0.16f, 0.32f, Wave.Saw);
             _walljump = Sweep("walljump", 320f, 660f, 0.10f, 0.28f, Wave.Triangle);
+            // footfall: a soft low tap (heard most of all → very quiet, short, no sharp attack)
+            _step     = Sweep("step", 200f, 132f, 0.05f, 0.16f, Wave.Triangle);
+            // wall grind: a brief filtered-noise scuff, soft so a long slide never grates
+            _scrape   = Noise("scrape", 0.09f, 0.16f);
             _slam     = Mix("slam",
                             Sweep01(420f, 80f, 0.20f, Wave.Saw),
                             Noise01(0.20f, 0.35f));
@@ -120,6 +124,8 @@ namespace Velocity
         public void PlayRing()      => Play(_ring);
         public void PlayTick()      => Play(_tick, 0.7f, 0.015f);
         public void PlayBank()      => Play(_bank, 1f, 0.02f);
+        public void PlayStep()      => Play(_step, 0.34f, 0.11f);   // quiet, wide pitch jitter = organic gait
+        public void PlayScrape()    => Play(_scrape, 0.45f, 0.06f);
         public void PlayCombo(int n) { if (_combo != null) Play(_combo[Mathf.Clamp(n, 0, _combo.Length - 1)]); }
 
         /// <summary>Retune the musical SFX (coin, note-block, ring, orb, fanfares) to the score

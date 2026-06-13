@@ -26,6 +26,9 @@ namespace Velocity
             pc.Boost(velocity.x, velocity.y);
             if (Sfx.Instance != null) Sfx.Instance.PlayBoost();
             if (FX.Instance != null) FX.Instance.DashPuff(transform.position, velocity.x >= 0 ? 1 : -1);
+            // catapult kick: the fling launches you 25-31 u/s, so give it a punch of shake to
+            // match (scaled by launch strength; the camera honours the reduce-shake setting)
+            if (GameManager.Instance != null) GameManager.Instance.Shake(0.10f + velocity.magnitude * 0.005f);
         }
     }
 }
