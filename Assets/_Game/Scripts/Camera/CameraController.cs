@@ -18,6 +18,8 @@ namespace Velocity
         public float fallLookDelay = 0.3f;   // only real drops engage look-down, never jump arcs
         public float maxShake = 0.6f;
         public float shakeDecay = 1.6f;
+        public float maxKick = 0.9f;
+        public float kickDecay = 7f;     // how fast a directional punch settles back
 
         [Header("Fling ease-out")]
         public float flingSpeed = 15f;       // speed where the camera starts pulling back
@@ -36,6 +38,7 @@ namespace Velocity
         private float _fallTime;
         private float _baseOrtho;      // resting zoom; flings ease outward from this
         private float _fling;          // 0..1 eased fling amount
+        private Vector3 _kick;         // decaying directional punch
         private float _trauma;
         private float _shakeSeed;
 
@@ -129,7 +132,19 @@ namespace Velocity
                 _trauma = Mathf.Max(0f, _trauma - shakeDecay * Time.unscaledDeltaTime);
             }
 
-            transform.position = _pos + shake;
+            // directional kick: a brief positional punch (boost fling, ground-pound) that decays —
+            // unlike random shake it has a DIRECTION, so big launches/impacts read as weighty
+            _kick = Vector3.MoveTowards(_kick, Vector3.zero, kickDecay * Time.unscaledDeltaTime);
+
+            transform.position = _pos + shake + _kick;
+        }
+
+        /// <summary>A weighty directional camera punch (decays fast). Skipped under Reduce Motion.</summary>
+        public void Kick(Vector2 dir, float amount)
+        {
+            if (Settings.ReduceMotion) return;
+            _kick += (Vector3)(dir.normalized * Mathf.Min(amount, maxKick));
+            if (_kick.magnitude > maxKick) _kick = _kick.normalized * maxKick;
         }
 
         private Vector3 DesiredCenter()

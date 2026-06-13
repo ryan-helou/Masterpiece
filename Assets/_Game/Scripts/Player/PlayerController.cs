@@ -58,8 +58,10 @@ namespace Velocity
         public bool enableCornerCorrect = true; // slip past clipped ledge corners instead of bonking
         public float cornerCorrectDist = 0.26f;
 
-        [Header("Duck / Ground-pound")]
-        public float duckSpeedMult = 0.42f;      // crawl this slow while crouched
+        [Header("Duck / Slide / Ground-pound")]
+        public float duckSpeedMult = 0.42f;      // crawl this slow while crouched (from a standstill)
+        public float slideFriction = 18f;        // a running crouch SLIDES: bleed momentum off this gently
+        public float slideMinSpeed = 5f;         // below this a slide settles into the normal crouch-crawl
         public float slamSpeed = 36f;            // air + Down: rocket straight down (Mario ground-pound)
         public float slamArmThreshold = 1.5f;    // only start a slam once you're no longer rising hard
 
@@ -120,6 +122,7 @@ namespace Velocity
         private bool _wallSliding;
 
         private bool _ducking;          // crouched on the ground (shrunk collider, slow crawl)
+        private bool _sliding;          // a ducked, momentum-preserving slide (entered the crouch at speed)
         private bool _slamming;         // air + Down ground-pound in progress
         private Vector2 _colSizeStand, _colSizeDuck, _colOffDuck;   // capsule presets
 
@@ -139,6 +142,7 @@ namespace Velocity
 
         public bool IsDashing => _dashing;
         public bool IsDucking => _ducking;
+        public bool IsSliding => _sliding;
         public bool IsSlamming => _slamming;
         public int Facing => _facing;
         public float DashCharge => Mathf.Clamp01(1f - Mathf.Max(0f, _dashCdTimer) / Mathf.Max(0.01f, dashCooldown)); // 0 just dashed → 1 ready
@@ -368,13 +372,7 @@ namespace Velocity
                 _dashTimer -= dt;
                 vel = new Vector2(_dashDir * dashSpeed, 0f);
 
-                _afterTimer -= dt;
-                if (_afterTimer <= 0f && FX.Instance != null && _sr != null)
-                {
-                    var trail = Palette.Player; trail.a = 0.4f;
-                    FX.Instance.Afterimage(_visual.position, _sr.sprite, trail, _sr.flipX, 1f, 0.2f);
-                    _afterTimer = 0.025f;
-                }
+                // (speed trail emitted centrally below — covers dash, boost, ring, glide)
 
                 if (_jumpBufferTimer > 0f && _coyoteTimer > 0f)
                 {
@@ -424,6 +422,19 @@ namespace Velocity
                     // ----- DUCK: crouch on the ground; stay crouched while a low ceiling blocks standing -----
                     bool canStand = HasHeadroom();
                     _ducking = _grounded && (wantDown || !canStand);
+
+                    // ----- SLIDE: press Down while running and you keep your momentum in a low slide
+                    // instead of snapping to the crouch-crawl speed — blast under low ceilings at speed
+                    // and slide-jump out the far side. Speed bleeds off via gentle friction, then it
+                    // settles into the normal crawl; the slide shares the crouch's shrunk hitbox.
+                    float duckCap = maxRunSpeed * duckSpeedMult;
+                    if (_ducking && _grounded && !_sliding && wantDown && Mathf.Abs(vel.x) > duckCap + 1f)
+                    {
+                        _sliding = true;
+                        if (FX.Instance != null) FX.Instance.LandPuff(FeetPos());   // a puff as you drop into it
+                    }
+                    if (_sliding && (!_ducking || !_grounded || Mathf.Abs(vel.x) <= slideMinSpeed))
+                        _sliding = false;
                     ApplyDuckCollider(_ducking);
 
                     // gripping a wall: airborne and touching it — a neutral stick still grips
@@ -436,20 +447,28 @@ namespace Velocity
                     // horizontal (briefly suppressed after a wall jump so the push-off sticks)
                     if (_wallJumpLock <= 0f)
                     {
-                        float cap = _ducking ? maxRunSpeed * duckSpeedMult : maxRunSpeed;
-                        float target = mx * cap;
-                        float accel;
-                        if (Mathf.Abs(mx) > 0.01f)
+                        if (_sliding)
                         {
-                            accel = _grounded ? groundAccel : airAccel;
-                            if (Mathf.Abs(vel.x) > 0.1f && Mathf.Sign(mx) != Mathf.Sign(vel.x))
-                                accel *= turnMultiplier;
+                            // pure momentum: steering is locked, speed bleeds off gently
+                            vel.x = Mathf.MoveTowards(vel.x, 0f, slideFriction * dt);
                         }
                         else
                         {
-                            accel = _grounded ? groundDecel : airDecel;
+                            float cap = _ducking ? duckCap : maxRunSpeed;
+                            float target = mx * cap;
+                            float accel;
+                            if (Mathf.Abs(mx) > 0.01f)
+                            {
+                                accel = _grounded ? groundAccel : airAccel;
+                                if (Mathf.Abs(vel.x) > 0.1f && Mathf.Sign(mx) != Mathf.Sign(vel.x))
+                                    accel *= turnMultiplier;
+                            }
+                            else
+                            {
+                                accel = _grounded ? groundDecel : airDecel;
+                            }
+                            vel.x = Mathf.MoveTowards(vel.x, target, accel * dt);
                         }
-                        vel.x = Mathf.MoveTowards(vel.x, target, accel * dt);
                     }
 
                     // jump: ground/coyote (a duck-jump un-ducks first), then jump-ring, then wall jump
@@ -510,6 +529,7 @@ namespace Velocity
                 _wallJumpLock = boostLockTime;
                 _grounded = false;
                 _airDashesLeft = maxAirDashes;
+                if (GameManager.Instance != null) GameManager.Instance.Kick(_pendingBoost, 0.7f);
             }
 
             // spring / bounce-pad launch
@@ -526,6 +546,8 @@ namespace Velocity
             if (_grounded && _platform != null) carry += _platform.Velocity;
             _rb.linearVelocity = vel + carry;
             _carry = carry;
+
+            EmitSpeedTrail((vel + carry).magnitude, dt);
 
             if (vel.y > 0.1f) CornerCorrect();
 
@@ -676,7 +698,7 @@ namespace Velocity
             _slamming = false;
             vel.y = 0f;
             if (Sfx.Instance != null) Sfx.Instance.PlayLand();
-            if (GameManager.Instance != null) { GameManager.Instance.Shake(0.22f); GameManager.Instance.Hitstop(0.05f); }
+            if (GameManager.Instance != null) { GameManager.Instance.Shake(0.22f); GameManager.Instance.Hitstop(0.05f); GameManager.Instance.Kick(Vector2.down, 0.6f); }
             if (FX.Instance != null)
                 FX.Instance.Burst(FeetPos(), Palette.GroundCap, 18, 8f, 0.18f, 0.5f, -10f, 1.3f);
             SetVisualScale(new Vector3(1.45f, 0.58f, 1f));          // hard pancake squash on impact
@@ -801,6 +823,21 @@ namespace Velocity
             float dy = _groundSurfaceY - _col.bounds.min.y;     // <0 drop to the surface, >0 lift onto it
             if (dy >= -0.12f && dy <= 0.06f && Mathf.Abs(dy) > 0.0005f)
                 _rb.position += new Vector2(0f, dy);
+        }
+
+        // a glowing motion-smear behind the ball whenever it's moving FAST — boost, dash, ring,
+        // spring, a downhill carry. Cadence + alpha scale with speed, so the trail intensifies the
+        // faster you go and vanishes at walking pace. This is the momentum made visible.
+        private void EmitSpeedTrail(float speed, float dt)
+        {
+            if (FX.Instance == null || _sr == null || _sr.sprite == null) return;
+            float over = Mathf.Clamp01((speed - maxRunSpeed * 1.15f) / Mathf.Max(1f, maxRunSpeed));
+            if (over <= 0f) { _afterTimer = 0f; return; }
+            _afterTimer -= dt;
+            if (_afterTimer > 0f) return;
+            _afterTimer = Mathf.Lerp(0.04f, 0.016f, over);          // denser the faster you move
+            var trail = Palette.Player; trail.a = 0.18f + 0.32f * over;
+            FX.Instance.Afterimage(_visual.position, _sr.sprite, trail, _sr.flipX, 1f, 0.22f);
         }
 
         private void SetVisualScale(Vector3 s)

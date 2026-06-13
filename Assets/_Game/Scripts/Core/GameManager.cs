@@ -303,6 +303,9 @@ namespace Velocity
         /// <summary>Camera shake hook (respects accessibility settings inside the camera).</summary>
         public void Shake(float amount) { if (_cam != null) _cam.AddShake(amount); }
 
+        /// <summary>A weighty directional camera punch (boost flings, ground-pound slams).</summary>
+        public void Kick(Vector2 dir, float amount) { if (_cam != null) _cam.Kick(dir, amount); }
+
         /// <summary>Brief freeze-frame for impact (stomps). Safe around pause/death.</summary>
         public void Hitstop(float seconds)
         {
