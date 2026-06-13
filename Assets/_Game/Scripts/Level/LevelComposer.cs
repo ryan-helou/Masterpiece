@@ -408,6 +408,21 @@ namespace Velocity
             return this;
         }
 
+        /// <summary>A geyser spout — a VERTICAL wave-pad at the foot of a sheer hull — launches
+        /// you straight up the cliff onto the upper deck, drifting onto the terrace as you peak.
+        /// The Great Wave's answer to the wall-jump: pure water, no climbing. The launch (~8u)
+        /// clears the hull face; a fumble just drops you back onto the safe deck below.</summary>
+        public LevelComposer Geyser(int rise = 5)
+        {
+            Ground(X, 3); D.Set(X + 1, _floor, 'K'); X += 3;   // the spout pad on a 3-wide deck
+            int newF = _floor + rise;
+            for (int y = 0; y < newF; y++) D.Set(X, y, '#');   // the hull face you launch up beside
+            _floor = newF;
+            X += 1;
+            Ground(X, 5); X += 5;
+            return this;
+        }
+
         /// <summary>The Swing's signature toy: an empty swing-seat pendulums over a briar gap.
         /// Board it near its close apex, ride the arc to the far apex, and leap to the far ledge.
         /// Boarding is the read — the seat only comes close at one end of its rhythm, the briar

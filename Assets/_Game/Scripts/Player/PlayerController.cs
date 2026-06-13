@@ -110,6 +110,9 @@ namespace Velocity
         private Vector2 _beltVel;       // conveyor velocity while grounded on one
         private float _pendingLaunch;   // spring launch queued for the next physics step
 
+        private bool _hasGroundSurface; // a surface top was found under the feet this step
+        private float _groundSurfaceY;  // its world Y — SeatOnGround plants the collider bottom here
+
         private int _wallDir;           // +1 wall on right, -1 wall on left, 0 none
         private int _lastWallDir;
         private float _wallCoyote;
@@ -137,6 +140,7 @@ namespace Velocity
         public bool IsSlamming => _slamming;
         public int Facing => _facing;
         public float DashCharge => Mathf.Clamp01(1f - Mathf.Max(0f, _dashCdTimer) / Mathf.Max(0.01f, dashCooldown)); // 0 just dashed → 1 ready
+        public bool Grounded => _grounded;
         public bool DashReady => _dashCdTimer <= 0f && (_grounded || _airDashesLeft > 0);
         public Vector2 Velocity => _rb != null ? _rb.linearVelocity : Vector2.zero;
         public bool MovementInputThisFrame { get; private set; }
@@ -462,6 +466,7 @@ namespace Velocity
                     if (_grounded && vel.y <= 0.01f)
                     {
                         vel.y = 0f;
+                        SeatOnGround();    // sit the feet exactly on the surface (kill the probe-height hover)
                     }
                     else
                     {
@@ -540,6 +545,7 @@ namespace Velocity
                 }
                 SetVisualScale(new Vector3(1.18f + 0.2f * impact, 0.82f - 0.14f * impact, 1f));
                 if (impact > 0.8f && GameManager.Instance != null) GameManager.Instance.Shake(0.12f);
+                if (GameManager.Instance != null) GameManager.Instance.OnPlayerLandedSafe();   // bank pending coins
                 Combo = 0;
             }
             // ease the squash/stretch back toward neutral, plus a little air-stretch
@@ -747,8 +753,28 @@ namespace Velocity
             {
                 var belt = hit.GetComponent<Conveyor>();
                 _beltVel = belt != null ? belt.Velocity : Vector2.zero;
+
+                // find the precise top of whatever is under the feet so SeatOnGround can plant the
+                // collider ON it. The overlap probe above reaches ~0.08 past the feet, which would
+                // otherwise let the player come to rest hovering that far above the surface.
+                var down = Physics2D.BoxCast(_col.bounds.center,
+                    new Vector2(_col.bounds.size.x * 0.9f, 0.04f), 0f, Vector2.down,
+                    _col.bounds.extents.y + 0.2f, GameLayers.GroundMask);
+                _hasGroundSurface = down.collider != null;
+                if (_hasGroundSurface) _groundSurfaceY = down.point.y;
             }
-            else _beltVel = Vector2.zero;
+            else { _beltVel = Vector2.zero; _hasGroundSurface = false; }
+        }
+
+        /// <summary>Snap the collider's bottom onto the detected surface, so the player rests
+        /// touching the ground instead of hovering up to the ground-probe's height above it.
+        /// Only nudges within a small window (the hover gap) — never teleports across a ledge.</summary>
+        private void SeatOnGround()
+        {
+            if (!_hasGroundSurface) return;
+            float dy = _groundSurfaceY - _col.bounds.min.y;     // <0 drop to the surface, >0 lift onto it
+            if (dy >= -0.12f && dy <= 0.06f && Mathf.Abs(dy) > 0.0005f)
+                _rb.position += new Vector2(0f, dy);
         }
 
         private void SetVisualScale(Vector3 s)
@@ -785,8 +811,12 @@ namespace Velocity
             _col.direction = CapsuleDirection2D.Vertical;
             // duck preset: keep the feet planted (offset down by half the height lost) so a crouch
             // slips under low overhangs without the player popping up or sinking through the floor.
+            // CRITICAL: a vertical CapsuleCollider2D needs height >= width, else Unity clamps it
+            // up to a circle of the WIDTH — so a (0.78, 0.6) duck silently becomes a 0.78-tall
+            // circle (the hitbox barely shrinks AND the offset drives it into the floor, popping
+            // the player up). Keep width <= height so the 0.6 height is real.
             _colSizeStand = _col.size;
-            _colSizeDuck = new Vector2(0.78f, 0.6f);
+            _colSizeDuck = new Vector2(0.6f, 0.6f);
             _colOffDuck = new Vector2(0f, -(_colSizeStand.y - _colSizeDuck.y) * 0.5f);
             _col.sharedMaterial = new PhysicsMaterial2D("PlayerFrictionless")
             {

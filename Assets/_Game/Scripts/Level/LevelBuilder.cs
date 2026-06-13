@@ -106,9 +106,11 @@ namespace Velocity
                         case '^': CreateSpike(root, c, r, Wx, Wy, At); break;
                         case 'x': CreateHazardBlock(root, c, r, Wx, Wy); break;
                         case '-': CreateOneWay(root, c, r, Wx, Wy); break;
-                        case 'M': CreateMoving(root, c, r, Wx, Wy, Vector2.right); break;
+                        // swing-seat / fountain: faster sweep (period ~3.9s, was ~5.2s) so the
+                        // board window comes around sooner — less dead waiting in a momentum level
+                        case 'M': CreateMoving(root, c, r, Wx, Wy, Vector2.right, 2.5f, 4f); break;
                         case 'm': CreateMoving(root, c, r, Wx, Wy, Vector2.right, 4f, 5f); break;
-                        case 'V': CreateMoving(root, c, r, Wx, Wy, Vector2.up); break;
+                        case 'V': CreateMoving(root, c, r, Wx, Wy, Vector2.up, 2.5f, 4f); break;
                         case 'o': CreateCoin(root, c, r, Wx, Wy); coins++; break;
                         case 'b': CreateSpring(root, c, r, Wx, Wy); break;
                         case 's': CreateSaw(root, c, r, Wx, Wy, Vector2.right); break;
@@ -712,6 +714,19 @@ namespace Velocity
             go.layer = GameLayers.Hazard;
             go.tag = GameTags.Hazard;
             go.AddComponent<Hazard>();
+
+            // telegraph: a warning glow that blooms (and ticks) as the blade swings into the
+            // danger extreme of its sweep, so the timing is learnable and the hit feels fair
+            var glowGo = new GameObject("SawGlow");
+            glowGo.transform.SetParent(go.transform, false);
+            glowGo.transform.localScale = Vector3.one * 1.8f;
+            var glowSr = glowGo.AddComponent<SpriteRenderer>();
+            glowSr.sprite = TextureFactory.RadialGlow(48);
+            glowSr.color = new Color(Palette.Hazard.r, Palette.Hazard.g, Palette.Hazard.b, 0f);
+            glowSr.sortingOrder = 5;
+            var tel = go.AddComponent<HazardTelegraph>();
+            tel.glow = glowSr;
+            tel.verticalDanger = axis.y > axis.x;
 
             var artSaw = LevelArt.Get("saw");
             if (artSaw != null)

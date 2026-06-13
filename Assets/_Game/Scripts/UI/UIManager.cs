@@ -31,6 +31,7 @@ namespace Velocity
         private CanvasGroup _splitGroup;
         private float _splitTarget, _splitPulse;
         private int _splitSign;   // -1 ahead, +1 behind, 0 unknown (for the cross-over pulse)
+        private double _paceGold, _paceSilver;   // live medal targets; 0 = no pace coloring (full-run)
         private GameObject _powerPanel;
         private Image _powerIcon, _powerBar;
         private Text _powerLabel;
@@ -310,7 +311,7 @@ namespace Velocity
 
         public void ShowHud(bool show) => _hud.SetActive(show);
 
-        public void SetHudCoins(int collected, int total)
+        public void SetHudCoins(int banked, int pending, int total)
         {
             if (_hudCoins != null) _hudCoins.enabled = false;   // replaced by the star indicator
 
@@ -321,17 +322,22 @@ namespace Velocity
                     var slot = _coinStarFills[i].transform.parent.gameObject;
                     bool used = i < total;
                     if (slot.activeSelf != used) slot.SetActive(used);
-                    _coinStarFills[i].enabled = i < collected;
-                    _coinStarHalos[i].enabled = i < collected;
+                    bool isBanked = i < banked;
+                    bool isPending = i >= banked && i < banked + pending;   // grabbed, not yet safe
+                    _coinStarFills[i].enabled = isBanked || isPending;
+                    var col = Palette.UiGold; col.a = isPending ? 0.4f : 1f; // pending reads dim
+                    _coinStarFills[i].color = col;
+                    _coinStarHalos[i].enabled = isBanked;                    // halo only once banked
                 }
             }
 
-            if (collected > _hudCoinPrev && _coinStarFills != null && collected - 1 < _coinStarFills.Length)
+            int shown = banked + pending;
+            if (shown > _hudCoinPrev && _coinStarFills != null && shown - 1 < _coinStarFills.Length)
             {
                 _coinPulse = 1f;
-                _coinPulseTarget = _coinStarFills[collected - 1].transform.parent;
+                _coinPulseTarget = _coinStarFills[shown - 1].transform.parent;
             }
-            _hudCoinPrev = collected;
+            _hudCoinPrev = shown;
         }
 
         /// <summary>Show/refresh the active power-up + its remaining-time bar (0..1).</summary>
@@ -370,6 +376,14 @@ namespace Velocity
             _countdownText.color = seconds > 0.25f ? Palette.UiText : Palette.UiAccent;
         }
 
+        /// <summary>Live medal targets for the running timer's pace tint. Pass 0,0 to disable
+        /// (e.g. a full-gallery run, where the on-screen clock is cumulative, not per-level).</summary>
+        public void SetPace(double gold, double silver)
+        {
+            _paceGold = gold;
+            _paceSilver = silver;
+        }
+
         public void SetHudLevel(string name, double? best)
         {
             _hudLevel.text = name;
@@ -386,7 +400,18 @@ namespace Velocity
             if (_timerMono == null) return;
             _timerMono.SetVisible(Settings.ShowTimer);
             _timerMono.SetText(SpeedrunTimer.Format(elapsed));
-            _timerMono.SetColor(running ? Palette.UiText : Palette.UiTextDim);
+            // medal pace: the running clock glows GOLD while you're still under the gold target,
+            // sits WHITE while only silver is in reach, and fades GREY once both have slipped —
+            // so a racer reads their medal standing without doing arithmetic. (Targets are 0 in a
+            // full-gallery run, where the displayed clock is cumulative and per-level pace is moot.)
+            Color tc = running ? Palette.UiText : Palette.UiTextDim;
+            if (running && _paceGold > 0.0)
+            {
+                if (elapsed <= _paceGold) tc = Palette.UiGold;
+                else if (elapsed <= _paceSilver) tc = Palette.UiText;
+                else tc = Palette.UiTextDim;
+            }
+            _timerMono.SetColor(tc);
 
             // combo meter
             if (_comboText != null)
@@ -736,7 +761,7 @@ namespace Velocity
                 _owName.text = name;
                 _owArtist.text = artist;
                 _owMeta.text = meta;
-                _owPrompt.text = "▲ JUMP   race all eight, one timer";
+                _owPrompt.text = $"▲ JUMP   race all {LevelLibrary.WorldAt(0).Levels.Count}, one timer";
             }
             else
             {
