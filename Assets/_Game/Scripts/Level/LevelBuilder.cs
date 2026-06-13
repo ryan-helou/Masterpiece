@@ -848,12 +848,25 @@ namespace Velocity
 
             if (At(c, r - 1) == '#')                               // buried — exposed faces get wall art
             {
-                if (wallTile != null && (At(c - 1, r) != '#' || At(c + 1, r) != '#'))
+                bool faceL = At(c - 1, r) != '#';
+                bool faceR = At(c + 1, r) != '#';
+                if (wallTile != null && (faceL || faceR))
                 {
+                    // the rock face at readable brightness (was silhouette-dark = a flat black bar)
                     var wsr = QuadSprite(root, "WallTile", new Vector3(Wx(c), Wy(r), 0f),
                         new Vector2(1.05f, 1.05f), wallTile, WallTint(c, r), -2);
                     if (Rand01(c * 31 + r) < 0.5f)                 // hash flip (no checkerboard)
                     { var s = wsr.transform.localScale; s.x = -s.x; wsr.transform.localScale = s; }
+
+                    // edge lighting turns the flat face into a rounded moonlit pillar: a cool
+                    // highlight down the LEFT exposed edge (top-left moon), shadow down the RIGHT.
+                    // Solid thin strips so the rim is continuous down a multi-cell column.
+                    if (faceL)
+                        Quad(root, "WallRim", new Vector3(Wx(c) - 0.45f, Wy(r), 0f),
+                            new Vector2(0.16f, 1.02f), new Color(0.62f, 0.74f, 1f, 0.45f), 2);
+                    if (faceR)
+                        Quad(root, "WallShadow", new Vector3(Wx(c) + 0.45f, Wy(r), 0f),
+                            new Vector2(0.16f, 1.02f), new Color(0f, 0f, 0f, 0.4f), 2);
                 }
                 return;
             }
@@ -891,15 +904,16 @@ namespace Velocity
             return (h & 0xFFFFFF) / (float)0x1000000;
         }
 
-        // walls render at silhouette darkness: the painting's vertical faces are near-black,
-        // and at these values the tile's busy motif disappears while a hint of texture stays
+        // night-stone tint for wall faces: dim and cool-green so it reads as moonlit rock, but
+        // bright enough that the texture SHOWS (silhouette-black made the pillars flat bars).
+        // Pair with the moonlit/shadow edge rims in DrawGroundCell for 3-D form.
         private static Color WallTint(int c, int r)
         {
             switch ((c * 5 + r * 3) % 3)
             {
-                case 1:  return new Color(0.4f, 0.45f, 0.36f);
-                case 2:  return new Color(0.33f, 0.37f, 0.3f);
-                default: return new Color(0.46f, 0.51f, 0.4f);
+                case 1:  return new Color(0.60f, 0.66f, 0.56f);
+                case 2:  return new Color(0.52f, 0.58f, 0.50f);
+                default: return new Color(0.66f, 0.72f, 0.60f);
             }
         }
 
