@@ -123,8 +123,12 @@ namespace LevelPreview
                 if (AidNear(start - 3, start, 'b')) aids += "spring ";
                 if (AidNear(start, x - 1, 'd')) aids += "orb ";
                 if (AidNear(start - 3, start, 'w')) aids += "feather ";
+                // moving platforms ('M' horizontal, 'V' vertical) ferry across a gap — dynamic
+                // footing, so a mover anywhere in the span makes the crossing designed, not broken
+                if (AidNear(start, x - 1, 'M') || AidNear(start, x - 1, 'm') || AidNear(start, x - 1, 'V')) aids += "mover ";
 
-                int limit = aids.Contains("pad") || aids.Contains("orb") ? 15
+                int limit = aids.Contains("mover") ? 18
+                          : aids.Contains("pad") || aids.Contains("orb") ? 15
                           : aids.Contains("feather") ? 12
                           : aids.Contains("ring") ? 10
                           : aids.Contains("spring") ? 10 : 7;
