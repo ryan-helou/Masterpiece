@@ -69,6 +69,15 @@ namespace Velocity
             Add("fg-mist",    ctr, ArtKey.Mode.Auto, 0.08f);
             Add("boost-pad",  ctr);
             Add("dash-orb",   ctr);
+            Add("crumble",    ctr);      // dying boards ('c') — board-pair, drawn slightly tall
+            Add("falling",    ctr);      // donut boards ('l') — drop after a shake
+            Add("conveyor",   ctr);      // belt tile, art faces RIGHT (mirrored for '<')
+            Add("portal",     ctr);      // warp gate — L3's arbor arch / the Scream's reality tear
+            Add("enemy-diver", ctr);
+            // Level 3 (The Swing) gameplay pieces
+            Add("note-block", ctr);
+            Add("swing-seat", bot);                       // bench at the point, ropes rise above
+            Add("jet",        new Vector2(0.5f, 1f));     // froth crown at the point, column hangs below
             Add("bg-moon",    ctr);
             Add("bg-wind",    ctr, ArtKey.Mode.Auto, 0.1f);   // feathered ends — no hard repeat seam
             Add("bg-mountain", bot);
@@ -87,6 +96,20 @@ namespace Velocity
             Add("bg-cypress", bot);
             Add("bg-village", bot);
             Add("bg-hills",   bot);
+            // garden backdrop bands (The Swing): the canopy hangs from the frame top, hedges
+            // rise from the floor line; both repeat horizontally, so feather their flanks
+            Add("bg-canopy",  new Vector2(0.5f, 1f), ArtKey.Mode.Auto, 0.10f);
+            Add("bg-swing",   new Vector2(0.5f, 1f));     // the empty swing — sways from its rope anchor
+            Add("bg-hedge",   bot, ArtKey.Mode.Auto, 0.10f);
+            Add("bg-fountain", bot);
+            Add("bg-urn",     bot);
+            Add("bg-bloom",   ctr);
+            // scream backdrop (The Scream): sky/water bands run off their edges, the headland
+            // fades its base into the fjord haze the way fuji does
+            Add("bg-skyband",  ctr, ArtKey.Mode.Auto, 0.10f);
+            Add("bg-fjord",    ctr, ArtKey.Mode.Auto, 0.10f);
+            Add("bg-headland", bot, ArtKey.Mode.Auto, 0.12f, true);
+            Add("bg-railing",  bot, ArtKey.Mode.Auto, 0.06f);
 
             set.Walk = ArtKey.LoadSheet(folder + "/movement", A, 2, 3, ctr);
             return set;

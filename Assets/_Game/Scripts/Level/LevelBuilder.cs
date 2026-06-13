@@ -97,6 +97,7 @@ namespace Velocity
                         case 'x': CreateHazardBlock(root, c, r, Wx, Wy); break;
                         case '-': CreateOneWay(root, c, r, Wx, Wy); break;
                         case 'M': CreateMoving(root, c, r, Wx, Wy, Vector2.right); break;
+                        case 'm': CreateMoving(root, c, r, Wx, Wy, Vector2.right, 4f, 5f); break;
                         case 'V': CreateMoving(root, c, r, Wx, Wy, Vector2.up); break;
                         case 'o': CreateCoin(root, c, r, Wx, Wy); coins++; break;
                         case 'b': CreateSpring(root, c, r, Wx, Wy); break;
@@ -204,13 +205,26 @@ namespace Velocity
         private static void CreateCrumble(Transform root, int start, int r, int len,
             System.Func<int, float> Wy)
         {
+            // collider lives on an UNSCALED parent so the visual can be art of any aspect;
+            // Crumble finds the renderer in children (shake moves the parent, fade hits the art)
             float cx = start + len / 2f;
-            var sr = Quad(root, "Crumble", new Vector3(cx, Wy(r), 0f), new Vector2(len, 1f),
-                Color.Lerp(Palette.Ground, Palette.Hazard, 0.35f), 0);
-            var col = sr.gameObject.AddComponent<BoxCollider2D>();
-            col.size = Vector2.one;
-            sr.gameObject.layer = GameLayers.Ground;
-            sr.gameObject.AddComponent<Crumble>();
+            var go = new GameObject("Crumble");
+            go.transform.SetParent(root, false);
+            go.transform.position = new Vector3(cx, Wy(r), 0f);
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = new Vector2(len, 1f);
+            go.layer = GameLayers.Ground;
+
+            var art = LevelArt.Get("crumble");
+            if (art != null)
+                // drawn a hair tall with the overdraw hanging BELOW the walk line — broken
+                // plank ends dangling over the fjord; the top edge stays flush and honest
+                QuadSprite(go.transform, "CrumbleArt", new Vector3(cx, Wy(r) - 0.1f, 0f),
+                    new Vector2(len + 0.04f, 1.2f), art, Color.white, 1);
+            else
+                Quad(go.transform, "CrumbleV", new Vector3(cx, Wy(r), 0f), new Vector2(len, 1f),
+                    Color.Lerp(Palette.Ground, Palette.Hazard, 0.35f), 0);
+            go.AddComponent<Crumble>();
         }
 
         private static void CreatePoolStrip(Transform root, int start, int r, int len,
@@ -228,13 +242,32 @@ namespace Velocity
             System.Func<int, float> Wy, int dir)
         {
             float cx = start + len / 2f;
-            var sr = Quad(root, "Conveyor", new Vector3(cx, Wy(r), 0f), new Vector2(len, 1f),
-                Palette.Moving, 0);
-            var col = sr.gameObject.AddComponent<BoxCollider2D>();
-            col.size = Vector2.one;
-            sr.gameObject.layer = GameLayers.Ground;
-            var cv = sr.gameObject.AddComponent<Conveyor>();
+            var go = new GameObject("Conveyor");
+            go.transform.SetParent(root, false);
+            go.transform.position = new Vector3(cx, Wy(r), 0f);
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = new Vector2(len, 1f);
+            go.layer = GameLayers.Ground;
+            var cv = go.AddComponent<Conveyor>();
             cv.Velocity = new Vector2(dir * 5f, 0f);
+
+            var art = LevelArt.Get("conveyor");
+            if (art != null)
+            {
+                // one tile per cell so the tread pattern keeps its scale on any belt length;
+                // art flows RIGHT, mirrored per-tile for a leftward belt
+                for (int i = 0; i < len; i++)
+                {
+                    var ts = QuadSprite(go.transform, "BeltTile",
+                        new Vector3(start + i + 0.5f, Wy(r), 0f), new Vector2(1.01f, 1.05f),
+                        art, Color.white, 1);
+                    if (dir < 0)
+                    { var s = ts.transform.localScale; s.x = -s.x; ts.transform.localScale = s; }
+                }
+            }
+            else
+                Quad(go.transform, "ConveyorV", new Vector3(cx, Wy(r), 0f), new Vector2(len, 1f),
+                    Palette.Moving, 0);
         }
 
         private static void CreateCoin(Transform root, int c, int r,
@@ -299,14 +332,25 @@ namespace Velocity
         private static void CreateFallingPlatform(Transform root, int start, int r, int len,
             System.Func<int, float> Wy)
         {
+            // unscaled parent holds physics; the visual is a child so it can be art of any
+            // aspect (FallingPlatform finds the renderer in children)
             float cx = start + len / 2f;
-            var sr = Quad(root, "FallingPlatform", new Vector3(cx, Wy(r), 0f), new Vector2(len, 1f),
-                Color.Lerp(Palette.Ground, Palette.UiGold, 0.45f), 0);
-            var col = sr.gameObject.AddComponent<BoxCollider2D>();
-            col.size = Vector2.one;
-            sr.gameObject.layer = GameLayers.Ground;
-            sr.gameObject.AddComponent<Rigidbody2D>();        // FallingPlatform sets it kinematic
-            sr.gameObject.AddComponent<FallingPlatform>();
+            var go = new GameObject("FallingPlatform");
+            go.transform.SetParent(root, false);
+            go.transform.position = new Vector3(cx, Wy(r), 0f);
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = new Vector2(len, 1f);
+            go.layer = GameLayers.Ground;
+            go.AddComponent<Rigidbody2D>();                   // FallingPlatform sets it kinematic
+            go.AddComponent<FallingPlatform>();
+
+            var art = LevelArt.Get("falling");
+            if (art != null)
+                QuadSprite(go.transform, "FallingArt", new Vector3(cx, Wy(r) - 0.1f, 0f),
+                    new Vector2(len + 0.04f, 1.2f), art, Color.white, 1);
+            else
+                Quad(go.transform, "FallingV", new Vector3(cx, Wy(r), 0f), new Vector2(len, 1f),
+                    Color.Lerp(Palette.Ground, Palette.UiGold, 0.45f), 0);
         }
 
         private static void CreateNoteBlock(Transform root, int start, int r, int len,
@@ -319,6 +363,23 @@ namespace Velocity
             col.size = Vector2.one;
             sr.gameObject.layer = GameLayers.Ground;
             sr.gameObject.AddComponent<NoteBlock>();
+
+            var art = LevelArt.Get("note-block");
+            if (art != null)
+            {
+                // one art tile per cell, parented to the block so it rides the bounce. The base
+                // quad goes transparent — but stays as the NoteBlock's flash layer, so each
+                // bounce still pulses a glow at the block's edges. Children inherit the parent's
+                // (len, 1) scale: undo the horizontal stretch and place per-cell in local units.
+                sr.color = new Color(1f, 1f, 1f, 0f);
+                for (int i = 0; i < len; i++)
+                {
+                    var ps = ArtPiece(sr.transform, "NoteArt", art,
+                        new Vector3(-0.5f + (i + 0.5f) / len, 0f, 0f), 1.02f, 5);
+                    var ls = ps.transform.localScale;
+                    ps.transform.localScale = new Vector3(ls.x / len, ls.y, 1f);
+                }
+            }
         }
 
         private static void CreateJumpRing(Transform root, int c, int r,
@@ -459,6 +520,15 @@ namespace Velocity
             col.size = new Vector2(1.0f, 1.8f);
             var p = go.AddComponent<Portal>();
 
+            var artPortal = LevelArt.Get("portal");
+            if (artPortal != null)
+            {
+                var ps = ArtPiece(go.transform, "PortalArt", artPortal, Vector3.zero, 2.4f, 5);
+                var tw = ps.gameObject.AddComponent<Twinkle>();
+                tw.speed = 1.6f; tw.scaleAmp = 0.05f; tw.alphaAmp = 0.18f;
+                return p;
+            }
+
             var v = new GameObject("PortalV");
             v.transform.SetParent(go.transform, false);
             v.transform.localScale = new Vector3(0.9f, 1.7f, 1f);
@@ -527,16 +597,17 @@ namespace Velocity
             var artEnemy = kind == EnemyKind.Walker ? LevelArt.Get("enemy")
                          : kind == EnemyKind.Flyer  ? LevelArt.Get("enemy-flyer")
                          : kind == EnemyKind.Spiky  ? LevelArt.Get("enemy-spiky")
-                         : null;
+                         : LevelArt.Get("enemy-diver");
             if (artEnemy != null)
             {
                 // soft warm halo first — the mobs came out dark against dark backdrops, and a
                 // faint gold rim of light separates them at any distance
+                bool airborne = kind == EnemyKind.Flyer || kind == EnemyKind.Diver;
                 var halo = ArtPiece(go.transform, "EnemyHalo", TextureFactory.RadialGlow(48),
-                    Vector3.zero, kind == EnemyKind.Flyer ? 2.2f : 1.9f, 8);
+                    Vector3.zero, airborne ? 2.2f : 1.9f, 8);
                 halo.color = new Color(1f, 0.86f, 0.5f, 0.3f);
                 ArtPiece(go.transform, "EnemyArt", artEnemy, Vector3.zero,
-                    kind == EnemyKind.Flyer ? 1.15f : 1.0f, 9);
+                    airborne ? 1.15f : 1.0f, 9);
             }
             else
             {
@@ -982,7 +1053,8 @@ namespace Velocity
         }
 
         private static void CreateMoving(Transform root, int c, int r,
-            System.Func<int, float> Wx, System.Func<int, float> Wy, Vector2 axis)
+            System.Func<int, float> Wx, System.Func<int, float> Wy, Vector2 axis,
+            float distance = 2.5f, float speed = 3f)
         {
             var sr = Quad(root, "MovingPlatform", new Vector3(Wx(c), Wy(r), 0f),
                 new Vector2(1.6f, 0.4f), Palette.Moving, 3);
@@ -993,8 +1065,25 @@ namespace Velocity
             rb.bodyType = RigidbodyType2D.Kinematic;
             var mp = sr.gameObject.AddComponent<MovingPlatform>();
             mp.axis = axis;
-            mp.distance = 2.5f;
-            mp.speed = 3f;
+            mp.distance = distance;
+            mp.speed = speed;
+
+            // imported art: a swing-seat for horizontal pendulums (bench bottom seated on the
+            // platform top, ropes rising above — bot pivot), a fountain jet for vertical ones
+            // (froth crown at the platform top, water column hanging below — top pivot). Both
+            // register to the platform TOP (local y +0.5, since the parent quad's 0.4 y-scale
+            // makes +0.5 local = +0.2 world = the collider's standable top). The art is a child
+            // so it rides the platform; undo the parent's (1.6, 0.4) scale on the child.
+            bool vertical = axis.y > 0.5f;
+            var art = LevelArt.Get(vertical ? "jet" : "swing-seat");
+            if (art != null)
+            {
+                sr.color = new Color(0f, 0f, 0f, 0f);     // collider quad goes invisible
+                var ps = ArtPiece(sr.transform, "SeatArt", art,
+                    new Vector3(0f, 0.5f, 0f), vertical ? 4.5f : 2.6f, 5);
+                var ls = ps.transform.localScale;
+                ps.transform.localScale = new Vector3(ls.x / 1.6f, ls.y / 0.4f, 1f);
+            }
         }
 
         private static void CreateGoal(Transform root, int c, int r,

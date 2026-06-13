@@ -22,7 +22,7 @@ namespace Velocity
         private void Awake()
         {
             _col = GetComponent<Collider2D>();
-            _sr = GetComponent<SpriteRenderer>();
+            _sr = GetComponentInChildren<SpriteRenderer>();   // visual may be an art child
             if (_sr != null) _solidColor = _sr.color;
             _home = transform.position;
         }

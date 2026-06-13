@@ -105,25 +105,28 @@ namespace Velocity
                 "#f4eedd", "#d24a37", "#e8c66a", "#7fa8c4", "#ff3b30")
                 .WithStyle(BackdropStyle.Wave, "#f4eedd", "#5a7a96").WithArt("Level2"),
 
-            // 3 — THE SWING : momentum / pendulum — springs, note-blocks, swinging saws
+            // 3 — THE SWING : momentum / pendulum — ridden swing-seats, note-blocks, springs,
+            // a fountain-jet lift and a warp arbor. Warm stone & wood = safe; rose briar = death.
             PaintingTheme.Make("The Swing", "Jean-Honoré Fragonard · 1767",
                 "Paintings/the-swing",
-                "Keep the swing alive — bounce the note-blocks and springs, carry your momentum through the garden.",
+                "Ride the pendulum — board the swing at one apex, leap from the other, and the garden's rhythm is yours.",
                 0.40f,
                 "#16240f", "#2a4019", "#426033",
                 "#3a2b1c", "#5e4830", "#221a10",
                 "#f4a6c0", "#ffd86a", "#ffe08a", "#f4a6c0", "#ff3b56")
-                .WithStyle(BackdropStyle.Garden, "#ffe69a", "#102a12"),
+                .WithStyle(BackdropStyle.Garden, "#ffe69a", "#102a12").WithArt("Level3"),
 
-            // 4 — THE SCREAM : disorientation — collapsing bridges over the fjord
+            // 4 — THE SCREAM : urgency — the ground dies under you; the sky burns over the fjord.
+            // Readability law: warm bridge timber = safe footing; the deep blue-black fjord (and
+            // anything vermilion-tipped) = death. The fire in the sky is atmosphere, never hazard.
             PaintingTheme.Make("The Scream", "Edvard Munch · 1893",
                 "Paintings/the-scream",
-                "The bridge is falling. Don't stop — the boards drop the instant you set foot on them.",
+                "The bridge is falling. Don't stop — the boards die under your feet, and the sky is the only way out.",
                 0.34f,
                 "#7a3b1a", "#a04a1c", "#c25a20",
-                "#15203a", "#2e3c5a", "#0c1422",
+                "#6e4527", "#b8804a", "#33200f",
                 "#f2e23a", "#ff7a1a", "#ffd23a", "#ff7a33", "#ff2d2d")
-                .WithStyle(BackdropStyle.Scream, "#ffd24a", "#0e1830"),
+                .WithStyle(BackdropStyle.Scream, "#ffd24a", "#0e1830").WithArt("Level4"),
         };
 
         public static int Count => All.Length;
