@@ -26,6 +26,8 @@ namespace Velocity
             p.LaunchUp(launchVelocity);
             if (Sfx.Instance != null) Sfx.Instance.PlaySpring();
             if (FX.Instance != null) FX.Instance.JumpPuff(transform.position);
+            // a light kick so the bounce reads as a launch, not a free float (gentler than a boost pad)
+            if (GameManager.Instance != null) GameManager.Instance.Shake(0.12f);
         }
     }
 }
