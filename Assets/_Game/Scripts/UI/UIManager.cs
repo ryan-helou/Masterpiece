@@ -698,10 +698,10 @@ namespace Velocity
             _owPanel.GetComponent<Image>().raycastTarget = false;
             var t = _owPanel.transform;
 
-            UIFactory.LabelAt(t, "THE GALLERY", 48, Palette.UiText,
+            UIFactory.LabelAt(t, "WORLD OF ART", 48, Palette.UiText,
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -42), new Vector2(1200, 60),
                 TextAnchor.UpperCenter, FontStyle.Bold);
-            UIFactory.LabelAt(t, "◀  ▶   walk the hall        ▲ JUMP   step into the painting        Esc   menu",
+            UIFactory.LabelAt(t, "◀  ▶   travel the trail        ▲ JUMP   enter the painting        Esc   menu",
                 22, Palette.UiTextDim,
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -100), new Vector2(1400, 34),
                 TextAnchor.UpperCenter);
@@ -747,21 +747,25 @@ namespace Velocity
             if (string.IsNullOrEmpty(name))
             {
                 _owNum.text = "";
-                _owName.text = "Walk the gallery";
+                _owName.text = "Travel the trail";
                 _owArtist.text = "";
                 _owMeta.text = "";
-                _owPrompt.text = "◀  ▶   stroll to a masterpiece";
+                _owPrompt.text = "◀  ▶   follow the trail to a masterpiece";
                 _owPrompt.color = Palette.UiTextDim;
                 return;
             }
 
             if (isFullRun)
             {
-                _owNum.text = "★ FINALE CHALLENGE";
+                _owNum.text = canEnter ? "★ FINALE CHALLENGE" : "★ FINALE — LOCKED";
                 _owName.text = name;
                 _owArtist.text = artist;
                 _owMeta.text = meta;
-                _owPrompt.text = $"▲ JUMP   race all {LevelLibrary.WorldAt(0).Levels.Count}, one timer";
+                _owPrompt.text = canEnter
+                    ? $"▲ JUMP   race all {LevelLibrary.WorldAt(0).Levels.Count}, one timer"
+                    : "clear every masterpiece to unlock the finale";
+                _owPrompt.color = canEnter ? Palette.UiAccent : Palette.UiTextDim;
+                return;
             }
             else
             {
