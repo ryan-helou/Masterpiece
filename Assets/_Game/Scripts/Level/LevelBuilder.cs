@@ -18,12 +18,16 @@ namespace Velocity
     /// </summary>
     public static class LevelBuilder
     {
+        private static int _gridH;   // grid height, so DrawGroundCell can tell "reaches the floor"
+                                     // (bottomless fill) from "ends at a doorway gap" (bounded fill)
+
         public static BuiltLevel Build(LevelDefinition def, Transform parent)
         {
             var rows = def.Rows;
             int h = rows.Length;
             int w = 0;
             foreach (var r in rows) w = Mathf.Max(w, r.Length);
+            _gridH = h;
 
             var root = new GameObject("Level_" + def.Id).transform;
             if (parent != null) root.SetParent(parent, false);
@@ -852,29 +856,19 @@ namespace Velocity
                 bool faceR = At(c + 1, r) != '#';
                 if (wallTile != null && (faceL || faceR))
                 {
-                    // depth from the surface: walls catch light up top and sink into shadow as they
-                    // descend, so a tall face reads as a 3-D wall instead of one flat tiled bar
+                    // depth from the surface: walls catch light up top and sink gently into shadow
+                    // as they descend, so a tall face reads as a 3-D wall, not one flat tiled bar
                     int depth = 1;
                     while (depth < 9 && At(c, r - depth) == '#') depth++;
-                    float dShade = Mathf.Lerp(1f, 0.58f, Mathf.Clamp01((depth - 1) / 7f));
+                    float dShade = Mathf.Lerp(1f, 0.74f, Mathf.Clamp01((depth - 1) / 7f));
                     Color wt = WallTint(c, r);
                     wt = new Color(wt.r * dShade, wt.g * dShade, wt.b * dShade, 1f);
 
-                    // the timber face at readable brightness (was silhouette-dark = a flat black bar)
+                    // the cliff face, near full brightness so wall_new's own light/dark shows
                     var wsr = QuadSprite(root, "WallTile", new Vector3(Wx(c), Wy(r), 0f),
                         new Vector2(1.05f, 1.05f), wallTile, wt, -2);
                     if (Rand01(c * 31 + r) < 0.5f)                 // hash flip (no checkerboard)
                     { var s = wsr.transform.localScale; s.x = -s.x; wsr.transform.localScale = s; }
-
-                    // edge lighting turns the flat face into a rounded moonlit pillar: a cool
-                    // highlight down the LEFT exposed edge (top-left moon), shadow down the RIGHT.
-                    // Solid thin strips so the rim is continuous down a multi-cell column.
-                    if (faceL)
-                        Quad(root, "WallRim", new Vector3(Wx(c) - 0.45f, Wy(r), 0f),
-                            new Vector2(0.16f, 1.02f), new Color(0.62f, 0.74f, 1f, 0.45f), 2);
-                    if (faceR)
-                        Quad(root, "WallShadow", new Vector3(Wx(c) + 0.45f, Wy(r), 0f),
-                            new Vector2(0.16f, 1.02f), new Color(0f, 0f, 0f, 0.4f), 2);
                 }
                 return;
             }
@@ -895,9 +889,13 @@ namespace Velocity
 
             if (At(c, r + 1) == '#')                               // solid below → deep terrain
             {
-                // flat, uniform soil that STARTS at the cell top (hidden behind the grass tile)
-                // and runs far down — no internal texture seam, no grass/soil border line.
-                float top = Wy(r) + 0.5f, bottom = -14f;
+                // extend the dark fill ONLY through the contiguous solid beneath this cell — never
+                // down through an open doorway/gap. A floating wall (chimney) must not drop a black
+                // bar into the air below it; only a column that reaches the true floor is bottomless.
+                int br = r;
+                while (br + 1 < _gridH && At(c, br + 1) == '#') br++;
+                float top = Wy(r) + 0.5f;
+                float bottom = (br >= _gridH - 1) ? -14f : Wy(br) - 0.5f;
                 Quad(root, "DeepSoil", new Vector3(Wx(c), (top + bottom) * 0.5f, 0f),
                     new Vector2(1.04f, top - bottom), Palette.GroundEdge, -3);
             }
