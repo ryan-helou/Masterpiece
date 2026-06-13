@@ -1113,19 +1113,25 @@ namespace Velocity
             mp.distance = distance;
             mp.speed = speed;
 
-            // imported art: a swing-seat for horizontal pendulums (bench bottom seated on the
-            // platform top, ropes rising above — bot pivot), a fountain jet for vertical ones
-            // (froth crown at the platform top, water column hanging below — top pivot). Both
-            // register to the platform TOP (local y +0.5, since the parent quad's 0.4 y-scale
-            // makes +0.5 local = +0.2 world = the collider's standable top). The art is a child
-            // so it rides the platform; undo the parent's (1.6, 0.4) scale on the child.
+            // imported art: a swing-seat for horizontal pendulums (bench bottom seated low, ropes
+            // rising above — bot pivot), a fountain jet for vertical ones (froth crown up top,
+            // water column hanging below — top pivot). The player stands on the collider's top
+            // (world +0.2). The art's STANDABLE surface isn't at its pivot edge, though: in the
+            // delivered art the swing's seat-board sits ~20% up from the image bottom, and the
+            // jet's foam crown ~5% down from the image top — so each art is shoved so that surface
+            // lands on the collider top (player visibly stands ON it, not floating above). The
+            // child rides the platform; its localPosition.y is in the parent's 0.4-scaled space
+            // (×0.4 → world), and we undo the parent's (1.6, 0.4) scale on the child's size.
             bool vertical = axis.y > 0.5f;
             var art = LevelArt.Get(vertical ? "jet" : "swing-seat");
             if (art != null)
             {
                 sr.color = new Color(0f, 0f, 0f, 0f);     // collider quad goes invisible
+                // swing-seat: board top 0.20·2.6≈0.52 above image bottom → drop so it meets +0.2.
+                // jet: crown top 0.046·4.5≈0.21 below image top → raise so it meets +0.2.
+                float localY = vertical ? 1.02f : -0.81f;
                 var ps = ArtPiece(sr.transform, "SeatArt", art,
-                    new Vector3(0f, 0.5f, 0f), vertical ? 4.5f : 2.6f, 5);
+                    new Vector3(0f, localY, 0f), vertical ? 4.5f : 2.6f, 5);
                 var ls = ps.transform.localScale;
                 ps.transform.localScale = new Vector3(ls.x / 1.6f, ls.y / 0.4f, 1f);
             }

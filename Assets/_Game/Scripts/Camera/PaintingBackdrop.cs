@@ -479,6 +479,15 @@ namespace Velocity
                     new Vector3(_halfW * 0.4f, _halfH * 0.45f, 24f), _halfH * 1.8f, -86);
                 Pulse(sr, 0.4f, 0.03f, 0.08f, 0f);
             }
+            else
+            {
+                // no rays art — paint Fragonard's stolen sunlight procedurally: a warm bloom
+                // from the upper-right so the garden still glows toward the goal
+                var L = Locked("SunGlow");
+                var sr = Spr(L, _glow, new Color(t.Glow.r, t.Glow.g, t.Glow.b, 0.5f),
+                    new Vector3(_halfW * 0.5f, _halfH * 0.55f, 24f), Vector2.one * (_halfH * 2.8f), -86);
+                Pulse(sr, 0.4f, 0.03f, 0.1f, 0f);
+            }
             if (cloud != null)
             {
                 // rococo cotton clouds in the high keyhole of sky the canopy leaves open
