@@ -842,7 +842,8 @@ namespace Velocity
             if (_afterTimer > 0f) return;
             _afterTimer = Mathf.Lerp(0.04f, 0.016f, over);          // denser the faster you move
             var trail = Palette.Player; trail.a = 0.18f + 0.32f * over;
-            FX.Instance.Afterimage(_visual.position, _sr.sprite, trail, _sr.flipX, 1f, 0.22f);
+            FX.Instance.Afterimage(_sr.transform.position, _sr.sprite, trail, _sr.flipX,
+                                   _sr.transform.lossyScale.y, 0.22f);
         }
 
         private void SetVisualScale(Vector3 s)

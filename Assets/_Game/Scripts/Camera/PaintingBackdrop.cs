@@ -305,10 +305,14 @@ namespace Velocity
                 var L = Par("Mist", 1.25f);
                 float w = AspectWidth(mist, 2.4f);
                 int i = 0;
+                // sparse wandering wisps: only ~1 in 7 candidate slots gets a patch, and each is
+                // jittered in position / size / alpha so the fog never reads as a tiled band.
                 for (float x = _bMinX - w; x <= _bMaxX * 1.35f + w; x += w * 0.85f, i++)
                 {
-                    var sr = ArtSpr(L, mist, new Color(1f, 1f, 1f, 0.13f),
-                        new Vector3(x, _bMinY + 2.8f, -2f), 2.4f, 14);
+                    if (Random.value > 0.14f) continue;
+                    var sr = ArtSpr(L, mist, new Color(1f, 1f, 1f, Random.Range(0.08f, 0.15f)),
+                        new Vector3(x + Random.Range(-w * 0.4f, w * 0.4f), _bMinY + Random.Range(2.2f, 3.6f), -2f),
+                        2.4f * Random.Range(0.8f, 1.25f), 14);
                     var sw = sr.gameObject.AddComponent<Sway>(); sw.speed = 0.25f; sw.degrees = 0.8f; sw.phase = i * 1.3f;
                 }
             }
