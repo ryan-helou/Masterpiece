@@ -28,6 +28,7 @@ namespace Velocity
             int w = 0;
             foreach (var r in rows) w = Mathf.Max(w, r.Length);
             _gridH = h;
+            ScreamBoss.Alive = 0;        // clean boss-gate count per build (never leak across loads)
 
             var root = new GameObject("Level_" + def.Id).transform;
             if (parent != null) root.SetParent(parent, false);
@@ -119,6 +120,7 @@ namespace Velocity
                         case 'f': CreateEnemy(root, c, r, Wx, Wy, EnemyKind.Flyer); break;
                         case 'y': CreateEnemy(root, c, r, Wx, Wy, EnemyKind.Spiky); break;
                         case 'z': CreateEnemy(root, c, r, Wx, Wy, EnemyKind.Diver); break;
+                        case 'Z': CreateScreamBoss(root, c, r, Wx, Wy); break;
                         case 'd': CreateDashOrb(root, c, r, Wx, Wy); break;
                         case 'j': CreateJumpRing(root, c, r, Wx, Wy); break;
                         case 'k': CreateBoostPad(root, c, r, Wx, Wy, new Vector2(25f, 16f)); break;
@@ -667,6 +669,65 @@ namespace Velocity
                 var wk = go.AddComponent<EnemyWalker>();
                 wk.range = 3.5f;
             }
+        }
+
+        /// <summary>Level 4's final boss — a giant Scream-knot. Big kinematic trigger; the
+        /// <see cref="ScreamBoss"/> component drives the hover/dive fight. Art: a dedicated "boss"
+        /// sprite, else the diver art blown up, else a procedural anguish-knot (dark body, vermilion
+        /// rim, a hollow void core — no face, per the level's art law).</summary>
+        private static void CreateScreamBoss(Transform root, int c, int r,
+            System.Func<int, float> Wx, System.Func<int, float> Wy)
+        {
+            var go = new GameObject("ScreamBoss");
+            go.transform.SetParent(root, false);
+            go.transform.position = new Vector3(Wx(c), Wy(r), 0f);
+
+            var rb = go.AddComponent<Rigidbody2D>();
+            rb.bodyType = RigidbodyType2D.Kinematic;
+            rb.gravityScale = 0f;
+            var col = go.AddComponent<BoxCollider2D>();
+            col.isTrigger = true;
+            col.size = new Vector2(2.4f, 2.4f);
+
+            var artBoss = LevelArt.Get("boss") ?? LevelArt.Get("enemy-diver");
+            if (artBoss != null)
+            {
+                ArtPiece(go.transform, "BossArt", artBoss, Vector3.zero, 3.0f, 9);    // FIRST child = the body
+                var halo = ArtPiece(go.transform, "BossHalo", TextureFactory.RadialGlow(64), Vector3.zero, 4.8f, 8);
+                halo.color = new Color(1f, 0.32f, 0.16f, 0.45f);
+            }
+            else
+            {
+                // procedural Scream-knot
+                var body = new GameObject("Body");
+                body.transform.SetParent(go.transform, false);
+                body.transform.localScale = Vector3.one * 2.7f;
+                var bsr = body.AddComponent<SpriteRenderer>();
+                bsr.sprite = TextureFactory.Circle(48, 24);
+                bsr.color = Palette.Hex("#0d1a24");                  // fjord-black knot
+                bsr.sortingOrder = 9;
+
+                var rim = new GameObject("Rim");                      // vermilion rim ring
+                rim.transform.SetParent(body.transform, false);
+                var rsr = rim.AddComponent<SpriteRenderer>();
+                rsr.sprite = TextureFactory.Ring(48, 5, 16);
+                rsr.color = new Color(1f, 0.18f, 0.18f, 0.9f);
+                rsr.sortingOrder = 10;
+                rim.AddComponent<Spinner>().degreesPerSecond = 45f;
+
+                var core = new GameObject("Void");                    // hollow scream-core (no face)
+                core.transform.SetParent(body.transform, false);
+                core.transform.localScale = Vector3.one * 0.42f;
+                var csr = core.AddComponent<SpriteRenderer>();
+                csr.sprite = TextureFactory.Circle(32, 24);
+                csr.color = Palette.Hex("#05090f");
+                csr.sortingOrder = 11;
+
+                var halo = ArtPiece(go.transform, "BossHalo", TextureFactory.RadialGlow(64), Vector3.zero, 4.8f, 8);
+                halo.color = new Color(1f, 0.3f, 0.14f, 0.5f);
+            }
+
+            go.AddComponent<ScreamBoss>();
         }
 
         private static void EnemyEye(Transform parent, Vector3 pos)
