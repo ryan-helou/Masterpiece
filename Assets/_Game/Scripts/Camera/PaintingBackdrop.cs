@@ -238,6 +238,14 @@ namespace Velocity
         private float AspectWidth(Sprite s, float height) =>
             height * (s.bounds.size.x / Mathf.Max(1e-4f, s.bounds.size.y));
 
+        /// <summary>Deterministic pseudo-random in [0,1) from an index + salt — scatters decorations
+        /// (height, scale, opacity, drift) without an RNG object, stable across rebuilds.</summary>
+        private static float Hash01(int i, int salt)
+        {
+            float s = Mathf.Sin(i * 12.9898f + salt * 4.1414f) * 43758.5453f;
+            return s - Mathf.Floor(s);
+        }
+
         private SpriteRenderer ArtSpr(Transform parent, Sprite s, Color c, Vector3 lp, float height, int order)
             => Spr(parent, s, c, lp, new Vector2(AspectWidth(s, height), height), order);
 
@@ -266,12 +274,14 @@ namespace Velocity
             }
             if (moon != null)
             {
-                // ONE moon — the painting has one. It lives in the upper-right of the frame and
-                // renders ABOVE the atmosphere scrim: the single jewel the night keeps at full
-                // brightness while everything else recedes.
+                // ONE moon — the painting has one. Screen-locked (a real moon barely parallaxes)
+                // but at deep SKY depth: it sits BEHIND the village, hills and cypress, not pasted
+                // over them. Its own halo glows through the atmosphere scrim so it stays the
+                // brightest thing in the sky — the single jewel, properly far away.
                 var L = Locked("Moon");
-                Pulse(ArtSpr(L, moon, Color.white,
-                    new Vector3(_halfW * 0.56f, _halfH * 0.56f, 7f), 5f, -44), 0.8f, 0.04f, 0.1f, 0f);
+                Vector3 mp = new Vector3(_halfW * 0.58f, _halfH * 0.52f, 9f);
+                Spr(L, _glow, new Color(1f, 0.93f, 0.7f, 0.5f), mp, Vector2.one * 9f, -80);
+                Pulse(ArtSpr(L, moon, Color.white, mp, 5f, -79), 0.8f, 0.04f, 0.1f, 0f);
             }
             if (star != null)
             {
@@ -795,15 +805,29 @@ namespace Velocity
             }
             if (mist != null)
             {
-                // the famous spray — flecks of foam drifting in FRONT of the action
+                // the famous spray — flecks of foam drifting in FRONT of the action. Scattered, not
+                // stamped: each clump gets its own height, scale, opacity, facing and drift so it reads
+                // as wind-blown sea-spray instead of one repeating band.
                 var L = Par("Spray", 1.25f);
                 float w = AspectWidth(mist, 2.4f);
+                float x = _bMinX - w;
+                float xEnd = _bMaxX * 1.35f + w;
                 int i = 0;
-                for (float x = _bMinX - w; x <= _bMaxX * 1.35f + w; x += w * 0.85f, i++)
+                while (x <= xEnd)
                 {
-                    var sr = ArtSpr(L, mist, new Color(1f, 1f, 1f, 0.13f),
-                        new Vector3(x, _bMinY + 2.8f, -2f), 2.4f, 14);
-                    var sw = sr.gameObject.AddComponent<Sway>(); sw.speed = 0.3f; sw.degrees = 1.0f; sw.phase = i * 1.3f;
+                    float r1 = Hash01(i, 17), r2 = Hash01(i, 41), r3 = Hash01(i, 73), r4 = Hash01(i, 91);
+                    float scale = Mathf.Lerp(1.5f, 3.1f, r1);            // big lazy clumps + small fast flecks
+                    float y = _bMinY + Mathf.Lerp(1.7f, 4.7f, r2);       // drift across a vertical band, not one line
+                    float alpha = Mathf.Lerp(0.07f, 0.17f, r3);          // some barely there, some catching light
+                    float z = -2f - r4 * 1.5f;
+                    var sr = ArtSpr(L, mist, new Color(1f, 1f, 1f, alpha), new Vector3(x, y, z), scale, 14);
+                    if (r4 > 0.5f) { var s = sr.transform.localScale; s.x = -s.x; sr.transform.localScale = s; }  // mirror half
+                    var sw = sr.gameObject.AddComponent<Sway>();
+                    sw.speed = Mathf.Lerp(0.18f, 0.42f, r2); sw.degrees = Mathf.Lerp(0.7f, 1.8f, r1); sw.phase = r3 * 6.28f;
+                    var dr = sr.gameObject.AddComponent<Drift>();
+                    dr.speed = Mathf.Lerp(0.10f, 0.30f, r1); dr.amount = Mathf.Lerp(0.2f, 0.5f, r3); dr.phase = r4 * 6.28f;
+                    x += w * Mathf.Lerp(0.45f, 0.95f, r1);               // uneven spacing: gusts and gaps
+                    i++;
                 }
             }
             Motes(new Color(0.96f, 0.97f, 0.95f, 1f), 6, 0.18f, 0.85f);

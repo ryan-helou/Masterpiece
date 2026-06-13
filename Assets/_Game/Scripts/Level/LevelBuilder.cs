@@ -79,9 +79,15 @@ namespace Velocity
             MergeRuns(w, h, At, '<', (start, r, len) => CreateConveyor(root, start, r, len, Wy, -1));
             MergeRuns(w, h, At, 'l', (start, r, len) => CreateFallingPlatform(root, start, r, len, Wy));
             MergeRuns(w, h, At, 'n', (start, r, len) => CreateNoteBlock(root, start, r, len, Wy));
-            // a continuous death-pool strip across each spike run (replaces the spikes visually)
+            // a continuous death-pool strip ONLY across genuine PITS (spike runs with void
+            // directly below). Spikes sitting on solid ground are surface hazards — they render
+            // as spike shards in CreateSpike, never as a tall pool column standing on the grass.
             if (LevelArt.Get("pool") != null)
-                MergeRuns(w, h, At, '^', (start, r, len) => CreatePoolStrip(root, start, r, len, Wy));
+                MergeRuns(w, h, At, '^', (start, r, len) =>
+                {
+                    if (At(start + len / 2, r + 1) != '#')        // void below → real pit
+                        CreatePoolStrip(root, start, r, len, Wy);
+                });
 
             // --- single-cell entities ---
             int coins = 0;
@@ -93,7 +99,7 @@ namespace Velocity
                     {
                         case 'P': spawn = new Vector3(Wx(c), Wy(r) + 0.05f, 0f); break;
                         case 'G': CreateGoal(root, c, r, Wx, Wy); break;
-                        case '^': CreateSpike(root, c, r, Wx, Wy); break;
+                        case '^': CreateSpike(root, c, r, Wx, Wy, At); break;
                         case 'x': CreateHazardBlock(root, c, r, Wx, Wy); break;
                         case '-': CreateOneWay(root, c, r, Wx, Wy); break;
                         case 'M': CreateMoving(root, c, r, Wx, Wy, Vector2.right); break;
@@ -755,9 +761,14 @@ namespace Velocity
                 if (plat != null && surface && hollow && len <= 9)
                 {
                     // covers the tunnel roofs too — a 1-thick elevated slab as bare grass tiles
-                    // read as a floating lawn; the frayed island art reads as a rock shelf
-                    QuadSprite(root, "PlatformArt", new Vector3(cx, Wy(r) - 0.2f, 0f),
-                        new Vector2(len + 0.7f, 1.5f), plat, Color.white, 0);
+                    // read as a floating lawn; the frayed island art reads as a rock shelf.
+                    // Flip + shade each ledge (hashed by start) so a row of them never reads as
+                    // cloned stamps of the same raft.
+                    float pb = Mathf.Lerp(0.87f, 1.05f, Rand01(start * 3 + 1));
+                    var psr = QuadSprite(root, "PlatformArt", new Vector3(cx, Wy(r) - 0.2f, 0f),
+                        new Vector2(len + 0.7f, 1.5f), plat, new Color(pb, pb, pb), 0);
+                    if (Rand01(start * 7 + 5) < 0.5f)
+                    { var s = psr.transform.localScale; s.x = -s.x; psr.transform.localScale = s; }
                     return;
                 }
 
@@ -841,22 +852,25 @@ namespace Velocity
                 {
                     var wsr = QuadSprite(root, "WallTile", new Vector3(Wx(c), Wy(r), 0f),
                         new Vector2(1.05f, 1.05f), wallTile, WallTint(c, r), -2);
-                    if (((c + r) & 1) == 1)                        // mirror the checkerboard
+                    if (Rand01(c * 31 + r) < 0.5f)                 // hash flip (no checkerboard)
                     { var s = wsr.transform.localScale; s.x = -s.x; wsr.transform.localScale = s; }
                 }
                 return;
             }
 
-            // uniform tiles — per-cell tint/mirror variation read as patchwork, so the
-            // repeat is hidden the honest way: the soil band below is shaded to near-black
-            QuadSprite(root, "GroundTile", new Vector3(Wx(c), Wy(r) - 0.05f, 0f),
+            // randomly FLIP each ground column (deterministic hash, not alternating — strict
+            // alternation made symmetric "butterfly" pairs; pseudo-random breaks the repeat)
+            var gsr = QuadSprite(root, "GroundTile", new Vector3(Wx(c), Wy(r) - 0.05f, 0f),
                 new Vector2(1.01f, 1.4f), tile, Color.white, 0);
+            if (Rand01(c * 2 + 1) < 0.5f)
+            { var s = gsr.transform.localScale; s.x = -s.x; gsr.transform.localScale = s; }
 
-            // shade the tile's soil band down toward the painting's near-black: kills the
-            // repeating texture where it tiles the most AND replaces the cobalt mass with
-            // dark earth, while the grass band above stays bright green/gold
-            QuadSprite(root, "SoilShade", new Vector3(Wx(c), Wy(r) - 0.31f, 0f),
-                new Vector2(1.03f, 0.92f), SoilShade(), Color.white, 1);
+            // shade the soil band to near-black — and WAVER its top edge per column so the dark
+            // line eats into the repeating swirl texture at a different height each tile, instead
+            // of a clean repeating stripe (the "wind" the swirl band read as). Grass stays bright.
+            float rise = Rand01(c * 5 + 2) * 0.34f;               // 0..0.34 extra coverage
+            QuadSprite(root, "SoilShade", new Vector3(Wx(c), Wy(r) - 0.34f + rise * 0.5f, 0f),
+                new Vector2(1.03f, 0.86f + rise), SoilShade(), Color.white, 1);
 
             if (At(c, r + 1) == '#')                               // solid below → deep terrain
             {
@@ -866,6 +880,15 @@ namespace Velocity
                 Quad(root, "DeepSoil", new Vector3(Wx(c), (top + bottom) * 0.5f, 0f),
                     new Vector2(1.04f, top - bottom), Palette.GroundEdge, -3);
             }
+        }
+
+        // cheap deterministic hash → [0,1): stable per-column variation that never reads as a
+        // repeating period (unlike c%n cycles), so terrain looks hand-scattered, not stamped
+        private static float Rand01(int seed)
+        {
+            uint h = (uint)seed * 2654435761u;
+            h ^= h >> 15; h *= 2246822519u; h ^= h >> 13;
+            return (h & 0xFFFFFF) / (float)0x1000000;
         }
 
         // walls render at silhouette darkness: the painting's vertical faces are near-black,
@@ -974,7 +997,7 @@ namespace Velocity
         }
 
         private static void CreateSpike(Transform root, int c, int r,
-            System.Func<int, float> Wx, System.Func<int, float> Wy)
+            System.Func<int, float> Wx, System.Func<int, float> Wy, System.Func<int, int, char> At)
         {
             var go = new GameObject("Spike");
             go.transform.SetParent(root, false);
@@ -984,7 +1007,8 @@ namespace Velocity
 
             var artPool = LevelArt.Get("pool");
             var artSpike = LevelArt.Get("spike");
-            if (artPool != null)
+            bool pit = At(c, r + 1) != '#';                                // void below = real pit
+            if (artPool != null && pit)
             {
                 // the pool is drawn as one continuous strip per run in Build(); this cell only keeps
                 // its hazard collider so the kill zones stay identical to the spikes.
