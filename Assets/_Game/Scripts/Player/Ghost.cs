@@ -98,13 +98,25 @@ namespace Velocity
                 transform.position = _samples[0];
         }
 
-        /// <summary>The time the ghost was at horizontal position x (for live +/- deltas). -1 if no data.</summary>
+        /// <summary>The time the ghost was at horizontal position x (for live +/- deltas). -1 if no data.
+        /// Interpolates WITHIN the bracketing 1/30s step so the delta glides instead of snapping in
+        /// 33 ms jumps (the old version returned the next sample's time → coarse and biased slow).</summary>
         public float TimeAtX(float x)
         {
             if (_samples == null || _samples.Count == 0) return -1f;
-            for (int i = 0; i < _samples.Count; i++)
-                if (_samples[i].x >= x) return i * GhostRecorder.Interval;
-            return _samples.Count * GhostRecorder.Interval;   // past the end (ghost already finished)
+            if (x <= _samples[0].x) return 0f;
+            for (int i = 1; i < _samples.Count; i++)
+            {
+                if (_samples[i].x >= x)
+                {
+                    // i is the first sample to reach x, so sample i-1 is strictly before it:
+                    // x0 < x <= x1, giving a clean fraction across this step
+                    float x0 = _samples[i - 1].x, x1 = _samples[i].x;
+                    float f = x1 > x0 ? (x - x0) / (x1 - x0) : 0f;
+                    return (i - 1 + f) * GhostRecorder.Interval;
+                }
+            }
+            return (_samples.Count - 1) * GhostRecorder.Interval;   // past the end (ghost finished earlier)
         }
 
         public void SetTime(double t)
