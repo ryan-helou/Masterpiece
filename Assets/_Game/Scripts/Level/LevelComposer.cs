@@ -337,6 +337,22 @@ namespace Velocity
             return this;
         }
 
+        /// <summary>Victory lap as a flourish — "the drift home": the level's signature swirl-ring
+        /// returns one last time as PURE JOY (no blade, no coin to chase). Take off from solid
+        /// ground, ride the boosted double-jump in one long soar over a single clean gap, and glide
+        /// down to the flag. The ring is met in act 1, mastered at the climax, and ridden home here
+        /// — a confident send-off on the level's own verb instead of two stray spikes.</summary>
+        public LevelComposer RingFinish(int gap = 4)
+        {
+            Ground(X, 4);
+            D.Set(X + 2, _floor + 3, 'j');     // the send-off ring, over the safe takeoff deck
+            X += 4;
+            // a gap a NORMAL jump can already clear, so a fumble never kills on the victory lap —
+            // the ring just turns the hop into a soaring, celebratory arc home.
+            Spikes(X, gap); X += gap;
+            return this;
+        }
+
         // ================== signature chunks (Levels 2-4 redesign) ==================
 
         /// <summary>A spark-pad over safe ground — the fling is pure joy here, so its speed is
