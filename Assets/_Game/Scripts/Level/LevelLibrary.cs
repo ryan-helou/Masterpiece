@@ -237,8 +237,8 @@ namespace Velocity
              .MobIsle(4, 6, 'y')                    // spiked patroller: no stomp, timing only
              .SpringCoin().Rest(3)                  // breather — the calm before the leap
              .RingSawGap(9)                         // THE jump: ring double-jump past the blade
-             // --- act 4: victory lap ---
-             .Runout(14)                            // full-speed spike hops to the flag
+             // --- act 4: victory lap — the drift home ---
+             .RingFinish()                          // one last joyful ring-soar to the flag — no blade, no trap
              .End();
             return new LevelDefinition("1", "Starry Night",
                 "Drift through the night — jump into a swirl-ring and tap jump again for a second boost.",
