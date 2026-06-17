@@ -554,12 +554,6 @@ namespace Velocity
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -290), new Vector2(1200, 50),
                 TextAnchor.UpperCenter, FontStyle.Italic);
 
-            // a cheeky animated shimmer-banner that bobs on a travelling wave
-            var banner = UIFactory.Rect(t, "GoatBanner");
-            UIFactory.Place(banner, new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f),
-                new Vector2(0, -372), new Vector2(1700, 120));
-            banner.gameObject.AddComponent<WavyTitle>().Build("DAVID IS THE GOAT OF MASTERPIECE!", 46);
-
             float y = -40;
             _selMain = UIFactory.Button(t, "PLAY", new Vector2(0, y), new Vector2(420, 78),
                 () => _gm.RequestPlay(), Palette.UiAccentDim, Palette.UiText, 38).gameObject;
