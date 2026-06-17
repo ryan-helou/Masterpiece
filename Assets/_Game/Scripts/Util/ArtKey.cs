@@ -24,6 +24,34 @@ namespace Velocity
             return Mode.Magenta;
         }
 
+        /// <summary>
+        /// Key out a MAGENTA background using a FIXED pure-magenta reference (255,0,255) instead of
+        /// sampling the top-right corner. Use this for art whose corner is NOT the background — e.g.
+        /// the menu floor, whose vignette darkens the image corners to navy (so corner-sampling would
+        /// key out the navy and keep the magenta — exactly backwards). Optional 9-slice border
+        /// (fractions of width/height) lets a plate stretch without distorting its ornate ends.
+        /// </summary>
+        public static Sprite LoadMagenta(string path, Vector2 pivot,
+            float borderX = 0f, float borderY = 0f, float featherX = 0f, bool featherBottom = false)
+        {
+            var src = Resources.Load<Texture2D>(path);
+            if (src == null) return null;
+            var tex = ToReadable(src);
+            KeyOutMagenta(tex);
+            ZapCornerMark(tex);
+            if (featherX > 0f || featherBottom) Feather(tex, featherX, featherBottom);
+            tex.Apply(false, false);
+
+            Vector4 border = (borderX > 0f || borderY > 0f)
+                ? new Vector4(tex.width * borderX, tex.height * borderY,
+                              tex.width * borderX, tex.height * borderY)
+                : Vector4.zero;
+            var s = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), pivot,
+                100f, 0, SpriteMeshType.FullRect, border);
+            s.name = path;
+            return s;
+        }
+
         public static Sprite Load(string path, Mode mode, Vector2 pivot,
             float featherX = 0f, bool featherBottom = false)
         {
@@ -228,6 +256,32 @@ namespace Velocity
                 // decontaminate magenta spill so keyed objects don't keep a pink edge fringe
                 // (only pixels where BOTH red and blue exceed green — i.e. pink/magenta — are touched)
                 float m = Mathf.Min(r, b) - g;
+                if (m > 0f) { r = Mathf.Clamp01(r - m); b = Mathf.Clamp01(b - m); }
+
+                p.r = (byte)(r * 255f);
+                p.g = (byte)(g * 255f);
+                p.b = (byte)(b * 255f);
+                p.a = (byte)(Mathf.Clamp01(a) * 255f);
+                px[i] = p;
+            }
+            tex.SetPixels32(px);
+        }
+
+        /// <summary>Magenta key against a fixed pure-magenta reference (1,0,1), with the same
+        /// distance falloff and pink-fringe decontamination as <see cref="KeyOut"/>'s Magenta path.
+        /// Independent of any corner sample — see <see cref="LoadMagenta"/>.</summary>
+        private static void KeyOutMagenta(Texture2D tex)
+        {
+            const float kr = 1f, kg = 0f, kb = 1f;
+            var px = tex.GetPixels32();
+            for (int i = 0; i < px.Length; i++)
+            {
+                var p = px[i];
+                float r = p.r / 255f, g = p.g / 255f, b = p.b / 255f;
+                float d = Mathf.Sqrt((r - kr) * (r - kr) + (g - kg) * (g - kg) + (b - kb) * (b - kb));
+                float a = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.16f, 0.34f, d));
+
+                float m = Mathf.Min(r, b) - g;     // pink/magenta spill → bleed it down
                 if (m > 0f) { r = Mathf.Clamp01(r - m); b = Mathf.Clamp01(b - m); }
 
                 p.r = (byte)(r * 255f);

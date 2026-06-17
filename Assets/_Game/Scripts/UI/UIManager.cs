@@ -533,40 +533,96 @@ namespace Velocity
         {
             _mainMenu = MenuRoot("MainMenu");
             var t = _mainMenu.transform;
+            var half = new Vector2(0.5f, 0.5f);
+            var topL = new Vector2(0.5f, 1f);
 
-            // painted wordmark if one exists (Resources/UI/logo, magenta-keyed like level art),
-            // otherwise the plain text title
-            var logo = ArtKey.Load("UI/logo", ArtKey.Mode.Auto, new Vector2(0.5f, 0.5f));
-            if (logo != null)
+            // ---- "after hours in the gallery" background, back -> front (parallax layers) ----
+            // Each art load is null-checked, so any missing PNG simply leaves that layer out.
+            var parallax = _mainMenu.AddComponent<MenuParallax>();
+
+            // far wall is full-bleed art with no transparency -> load Opaque (no keying)
+            var rWall = MenuArt(t, "Wall", ArtKey.Load("UI/menu-wall", ArtKey.Mode.Opaque, half),
+                half, half, Vector2.zero, new Vector2(2600, 1462));
+            if (rWall != null) parallax.Add(rWall, 0.25f);
+
+            // two soft spotlight cones glowing on the wall
+            var shaft = ArtKey.LoadMagenta("UI/light-shaft", half);
+            foreach (var s in new[] { (-430f, "ShaftL"), (430f, "ShaftR") })
             {
-                var lrt = UIFactory.Rect(t, "Logo");
-                UIFactory.Place(lrt, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                    new Vector2(0, -40), new Vector2(1100, 250));
-                var img = lrt.gameObject.AddComponent<Image>();
-                img.sprite = logo;
-                img.preserveAspect = true;
+                var rs = MenuArt(t, s.Item2, shaft, topL, topL, new Vector2(s.Item1, -30),
+                    new Vector2(540, 860), 0.30f);
+                if (rs != null) parallax.Add(rs, 0.4f);
             }
+
+            // the four framed masterpieces, then the polished floor + vignette
+            var rFrames = MenuArt(t, "Frames", ArtKey.LoadMagenta("UI/menu-frames", half),
+                half, half, Vector2.zero, new Vector2(2300, 1294));
+            if (rFrames != null) parallax.Add(rFrames, 0.5f);
+
+            var rFloor = MenuArt(t, "Floor", ArtKey.LoadMagenta("UI/menu-floor", half),
+                half, half, Vector2.zero, new Vector2(2120, 1193));
+            if (rFloor != null) parallax.Add(rFloor, 0.7f);
+
+            // ---- foreground props (lower-left), behind the UI, never raycast targets ----
+            var rStanch = MenuArt(t, "Stanchion", ArtKey.LoadMagenta("UI/stanchion", half),
+                Vector2.zero, Vector2.zero, new Vector2(360, 0), new Vector2(190, 334), 1f, true);
+            if (rStanch != null) parallax.Add(rStanch, 1.0f);
+
+            var rVisitor = MenuArt(t, "Visitor", ArtKey.LoadMagenta("UI/visitor", half),
+                Vector2.zero, Vector2.zero, new Vector2(60, 0), new Vector2(320, 477), 1f, true);
+            if (rVisitor != null) parallax.Add(rVisitor, 0.85f);
+
+            // ---- title: the painted gilded wordmark (falls back to text if absent) ----
+            var logo = ArtKey.LoadMagenta("UI/logo", half);
+            if (logo != null)
+                MenuArt(t, "Logo", logo, topL, topL, new Vector2(0, -26), new Vector2(1120, 286), 1f, true);
             else
                 UIFactory.LabelAt(t, "MASTERPIECE", 130, Palette.UiText,
-                    new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -150), new Vector2(1200, 150),
+                    topL, topL, new Vector2(0, -150), new Vector2(1200, 150),
                     TextAnchor.UpperCenter, FontStyle.Bold);
-            UIFactory.LabelAt(t, "a speedrun platformer", 34, Palette.UiAccent,
-                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -290), new Vector2(1200, 50),
+
+            UIFactory.LabelAt(t, "a speedrun through the great paintings", 30, Palette.UiTextDim,
+                topL, topL, new Vector2(0, -326), new Vector2(1200, 46),
                 TextAnchor.UpperCenter, FontStyle.Italic);
 
-            float y = -40;
-            _selMain = UIFactory.Button(t, "PLAY", new Vector2(0, y), new Vector2(420, 78),
-                () => _gm.RequestPlay(), Palette.UiAccentDim, Palette.UiText, 38).gameObject;
-            UIFactory.Button(t, "LEADERBOARDS", new Vector2(0, y - 98), new Vector2(420, 70),
-                () => _gm.RequestLeaderboard());
-            UIFactory.Button(t, "SETTINGS", new Vector2(0, y - 184), new Vector2(420, 70),
-                () => _gm.RequestSettings());
-            UIFactory.Button(t, "QUIT", new Vector2(0, y - 270), new Vector2(420, 70),
-                () => _gm.RequestQuit());
+            // ---- buttons as museum plaques: gilded PLAY, brass rest (9-sliced) ----
+            var plateGold = ArtKey.LoadMagenta("UI/plaque-gold", half, 0.18f, 0.40f);
+            var plate     = ArtKey.LoadMagenta("UI/plaque",      half, 0.18f, 0.40f);
+
+            _selMain = UIFactory.PlateButton(t, "PLAY", new Vector2(0, -28), new Vector2(470, 88),
+                () => _gm.RequestPlay(), plateGold, Palette.UiText, 40).gameObject;
+            UIFactory.PlateButton(t, "LEADERBOARDS", new Vector2(0, -128), new Vector2(440, 74),
+                () => _gm.RequestLeaderboard(), plate, Palette.UiText, 30);
+            UIFactory.PlateButton(t, "SETTINGS", new Vector2(0, -214), new Vector2(440, 74),
+                () => _gm.RequestSettings(), plate, Palette.UiText, 30);
+            UIFactory.PlateButton(t, "QUIT", new Vector2(0, -300), new Vector2(440, 74),
+                () => _gm.RequestQuit(), plate, Palette.UiText, 30);
 
             UIFactory.LabelAt(t, "v0.1 • built with Claude Code", 20, Palette.UiTextFaint,
                 new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 24), new Vector2(600, 30),
                 TextAnchor.LowerCenter);
+
+            // soft entrance fade each time the menu is shown
+            _mainMenu.AddComponent<CanvasGroup>();
+            _mainMenu.AddComponent<MenuFadeIn>();
+        }
+
+        /// <summary>A decorative menu Image (background layer / prop / title). Returns null — drawing
+        /// nothing — when the sprite is missing, so an absent PNG never leaves a blank white quad.
+        /// Always non-interactive so it can't intercept clicks meant for the buttons in front.</summary>
+        private static RectTransform MenuArt(Transform parent, string name, Sprite sprite,
+            Vector2 anchor, Vector2 pivot, Vector2 pos, Vector2 size,
+            float alpha = 1f, bool preserveAspect = false)
+        {
+            if (sprite == null) return null;
+            var rt = UIFactory.Rect(parent, name);
+            UIFactory.Place(rt, anchor, pivot, pos, size);
+            var img = rt.gameObject.AddComponent<Image>();
+            img.sprite = sprite;
+            img.color = new Color(1f, 1f, 1f, alpha);
+            img.preserveAspect = preserveAspect;
+            img.raycastTarget = false;
+            return rt;
         }
 
         public void ShowMainMenu() { HideAll(); _mainMenu.SetActive(true); SetSelected(_selMain); }
