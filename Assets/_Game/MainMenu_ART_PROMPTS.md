@@ -1,9 +1,33 @@
 # Main Menu — Gemini Art Prompts
 
-Drop every PNG into `Assets/_Game/Resources/UI/` using the **exact filename** in each heading.
-PNG only. Keyed art = pure magenta `#FF00FF` background (engine cuts it to alpha). Backgrounds = opaque, no magenta.
+## About this set (keep in mind for every image)
 
-Generate order: **1 → 2 → 5 → 4 → 6 → 3 → 7 → 8 → 9 → 10**.
+**Masterpiece** is a 2D speedrun platformer where every level is a famous painting brought to life
+(Van Gogh's *Starry Night*, Hokusai's *Great Wave*, Fragonard's *The Swing*, Munch's *The Scream*).
+These 10 PNGs are not separate pictures — they are **stacked layers of one screen**: the game's
+**main menu, imagined as an art museum after hours**. Lights low, four masterpieces glowing on a deep
+navy wall, a hushed and slightly magical mood. So every asset must feel like **one hand, one room, one
+light**: the warm tungsten spotlights always come from **above**, shadows fall to **museum-navy**, and
+gold leaf is the only bright thing.
+
+**Shared look (already baked into each prompt — don't fight it):**
+- *Style:* moody painterly oil illustration, soft gallery light, gilded gold leaf, faint canvas-weave
+  grain over everything; elegant, reverent, nocturnal. NOT flat vector / cartoon / 3D / photographic.
+- *Palette:* deep museum-navy `#11131c`, warm shadow, antique brass → gold-leaf
+  (`#9a7b1f`→`#c9a227`→`#ffd166`→`#fff1c0`), cream `#e7ecf5` highlights; tiny accents of teal,
+  foam-white, rose, and scream-orange leaking from the paintings.
+
+**How the layers stack on screen (back → front):** `menu-wall` (opaque room) → `menu-frames` (the 4
+paintings) → title `logo` + `plaque`/`plaque-gold` buttons → `menu-floor` (foreground floor + vignette)
+→ `visitor` + `stanchion` props. `frame-ornament` crowns the title, `light-shaft` is dropped in a few
+times as spotlight glow. Each piece keeps the **center clear** so the title and buttons have room.
+
+**Pipeline:** drop every PNG into `Assets/_Game/Resources/UI/` using the **exact filename** in each
+heading. PNG only. Keyed art = pure magenta `#FF00FF` background (the engine cuts it to alpha, so keep
+the magenta clean and the subject edge crisp). Backgrounds = opaque, no magenta. Generate the whole set
+in one session so they match; if one drifts off-palette, regenerate it.
+
+**Generate order:** **1 → 2 → 5 → 4 → 6 → 3 → 7 → 8 → 9 → 10**.
 
 ---
 
