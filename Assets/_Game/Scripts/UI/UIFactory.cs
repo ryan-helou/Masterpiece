@@ -148,6 +148,52 @@ namespace Velocity
             return btn;
         }
 
+        /// <summary>
+        /// A button whose face is a 9-sliced museum plaque sprite (brass / gilded) with an engraved
+        /// label. Falls back to the flat <see cref="Button"/> if <paramref name="plate"/> is null, so
+        /// a missing PNG never breaks the menu. The plate's height maps to the button height and its
+        /// ornate ends are kept undistorted while the plain middle stretches to the label width.
+        /// </summary>
+        public static Button PlateButton(Transform parent, string label, Vector2 pos, Vector2 size,
+            Action onClick, Sprite plate, Color? text = null, int fontSize = 30, Vector2? anchor = null)
+        {
+            if (plate == null)
+                return Button(parent, label, pos, size, onClick, Palette.UiPanelSoft, text, fontSize, anchor);
+
+            var a = anchor ?? new Vector2(0.5f, 0.5f);
+            var rt = Rect(parent, "Plate_" + label);
+            Place(rt, a, new Vector2(0.5f, 0.5f), pos, size);
+
+            var img = rt.gameObject.AddComponent<Image>();
+            img.sprite = plate;
+            img.type = Image.Type.Sliced;
+            img.fillCenter = true;
+            // scale the slice so the plate's full height maps to the button height — keeps the ornate
+            // ends in proportion and guarantees the 9-slice borders never overflow a short button.
+            img.pixelsPerUnitMultiplier = Mathf.Max(0.01f, plate.rect.height / Mathf.Max(1f, size.y));
+            img.color = Color.white;
+
+            var btn = rt.gameObject.AddComponent<Button>();
+            btn.targetGraphic = img;
+            // the plate art is already at full brightness, so rest a touch dim and brighten on hover
+            var cb = btn.colors;
+            cb.normalColor = new Color(0.88f, 0.88f, 0.88f);
+            cb.highlightedColor = Color.white;
+            cb.pressedColor = new Color(0.72f, 0.72f, 0.72f);
+            cb.selectedColor = new Color(0.96f, 0.96f, 0.96f);
+            cb.fadeDuration = 0.08f;
+            btn.colors = cb;
+            if (onClick != null)
+                btn.onClick.AddListener(() => { if (Sfx.Instance != null) Sfx.Instance.PlayClick(); onClick(); });
+
+            var lbl = Label(rt, label, fontSize, text ?? Palette.UiText, TextAnchor.MiddleCenter, FontStyle.Bold);
+            Stretch((RectTransform)lbl.transform);
+            var sh = lbl.gameObject.AddComponent<Shadow>();   // engraved-into-metal feel
+            sh.effectColor = new Color(0f, 0f, 0f, 0.5f);
+            sh.effectDistance = new Vector2(1.5f, -1.5f);
+            return btn;
+        }
+
         public static Slider Slider(Transform parent, float value, Vector2 pos, Vector2 size,
             Action<float> onChange, Vector2? anchor = null)
         {
