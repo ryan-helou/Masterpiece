@@ -1,6 +1,8 @@
-# Masterpiece
+# 🖼️ Masterpiece
 
 *A 2D speedrun platformer where each level is a famous painting you jump into and run against the clock.*
+
+![Unity](https://img.shields.io/badge/Unity-000000?style=flat-square&logo=unity&logoColor=white) ![C#](https://img.shields.io/badge/C%23-512BD4?style=flat-square&logo=csharp&logoColor=white)
 
 You walk a little avatar across a painted overworld map, stop at a landmark, and press jump to fall into the canvas. Inside, movement is the whole game. A high-precision timer arms the moment the level loads and starts the instant you move; cross the goal and it freezes to `M:SS.mmm`, saved to a local top-ten ladder with gold and silver medal targets per level. Your fastest run is recorded and replayed as a translucent ghost, and the HUD shows a live +/- against it as you go. A final pavilion, unlocked once every painting is cleared, starts a full-gallery run — every level back to back, one cumulative clock, with splits.
 
