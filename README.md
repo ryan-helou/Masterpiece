@@ -1,6 +1,12 @@
+<div align="center">
+
 # Masterpiece
 
-A 2D platform game where each level takes place inside a famous painting, and the goal is to finish it as fast as you can.
+**A 2D platform game where each level takes place inside a famous painting, and the goal is to finish it as fast as you can.**
+
+</div>
+
+<br>
 
 You walk through a small museum, step up to a painting, and jump into it. Inside, you run, jump, dash, and climb to the finish line while a timer counts every millisecond. Each painting has its own look and its own twist on the rules. It is a game for people who enjoy "speedrunning" (replaying a level over and over to shave off time).
 
