@@ -1,20 +1,16 @@
-# 🖼️ Masterpiece
+# Masterpiece
 
-*A 2D speedrun platformer where each level is a famous painting you jump into and run against the clock.*
+A 2D platform game where each level takes place inside a famous painting, and the goal is to finish it as fast as you can.
 
-![Unity](https://img.shields.io/badge/Unity-000000?style=flat-square&logo=unity&logoColor=white) ![C#](https://img.shields.io/badge/C%23-512BD4?style=flat-square&logo=csharp&logoColor=white)
+You walk through a small museum, step up to a painting, and jump into it. Inside, you run, jump, dash, and climb to the finish line while a timer counts every millisecond. Each painting has its own look and its own twist on the rules. It is a game for people who enjoy "speedrunning" (replaying a level over and over to shave off time).
 
-You walk a little avatar across a painted overworld map, stop at a landmark, and press jump to fall into the canvas. Inside, movement is the whole game. A high-precision timer arms the moment the level loads and starts the instant you move; cross the goal and it freezes to `M:SS.mmm`, saved to a local top-ten ladder with gold and silver medal targets per level. Your fastest run is recorded and replayed as a translucent ghost, and the HUD shows a live +/- against it as you go. A final pavilion, unlocked once every painting is cleared, starts a full-gallery run — every level back to back, one cumulative clock, with splits.
+The game is still being made: four of a planned eight paintings are playable so far.
 
-The point of it all is the controller. Gravity is hand-rolled (`gravityScale = 0`) so the jump arc is fully under the game's control: variable jump height, 0.09s of coyote time, a 0.10s jump buffer, a brief apex hang, fast-fall, a 0.12s dash on a 0.42s cooldown, wall jumps, corner-correction that slips you past clipped ledges, a momentum-preserving slide, and a Mario-style ground-pound. Top run speed is 11 units/s; a jump clears 3.3. Stomping enemies and chaining dashes builds a combo that resets when you touch ground.
+## What you can do with it
 
-Each canvas also sets the level's signature mechanic:
-
-- Starry Night (van Gogh, 1889) — dreamy low gravity; tap jump inside a swirl-ring for a second boost, then glide the long gaps.
-- The Great Wave off Kanagawa (Hokusai, 1831) — wave-pads fling you and spray pearls refill your air-dash; the blue sea is death.
-- The Swing (Fragonard, 1767) — board a ridden pendulum seat at one apex and leap from the other, riding fountain-jet lifts up the garden.
-- The Scream (Munch, 1893) — crumbling bridge boards drop the instant you touch them, and the level ends fighting the Scream itself: dodge its plunges, stomp its crown three times.
-
-The whole thing is built code-first. Drop a single `GameBootstrap` component on one GameObject and press Play — camera, input, UI, state machine and every level construct themselves at runtime. Levels are authored as char grids in code rather than hand-placed scenes, physics runs at 120 Hz, and a pixelation pass gives it a retro look. Palettes and hand-built scenery are sampled per painting; the real artwork only ever appears small, framed on the overworld.
-
-Built in Unity 6000.4.10f1 with URP and the Input System. Mid-development: four of a planned eight paintings are playable so far.
+- Play levels set in Starry Night, The Great Wave off Kanagawa, The Swing, and The Scream.
+- Use each painting's special mechanic, like low gravity and swirl boosts in Starry Night or collapsing bridges in The Scream.
+- Fight a final boss, the Scream itself, at the end of its level.
+- Race a see-through "ghost" replay of your own best run, with a live display of how far ahead or behind you are.
+- Earn gold and silver medals for beating target times, and keep a top-ten list of your best times on each level.
+- Once every painting is cleared, do a full run of all levels back to back on a single clock.
