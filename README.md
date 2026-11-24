@@ -4,6 +4,8 @@
 
 **A 2D platform game where each level takes place inside a famous painting, and the goal is to finish it as fast as you can.**
 
+<!-- facts --><img alt="Paintings: 4 of 8 playable" src="https://img.shields.io/badge/Paintings-4_of_8_playable-24292f?style=for-the-badge"> <img alt="Timer: to the millisecond" src="https://img.shields.io/badge/Timer-to_the_millisecond-24292f?style=for-the-badge">
+
 </div>
 
 <br>
