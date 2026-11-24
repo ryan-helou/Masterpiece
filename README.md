@@ -4,7 +4,7 @@
 
 **A 2D platform game where each level takes place inside a famous painting, and the goal is to finish it as fast as you can.**
 
-<!-- facts --><img alt="Paintings: 4 of 8 playable" src="https://img.shields.io/badge/Paintings-4_of_8_playable-24292f?style=for-the-badge"> <img alt="Timer: to the millisecond" src="https://img.shields.io/badge/Timer-to_the_millisecond-24292f?style=for-the-badge">
+<!-- facts --><img alt="Genre: 2D speedrun platformer" src="https://img.shields.io/badge/Genre-2D_speedrun_platformer-24292f?style=for-the-badge"> <img alt="Levels: famous paintings" src="https://img.shields.io/badge/Levels-famous_paintings-24292f?style=for-the-badge"> <img alt="Timer: to the millisecond" src="https://img.shields.io/badge/Timer-to_the_millisecond-24292f?style=for-the-badge">
 
 </div>
 
@@ -12,7 +12,7 @@
 
 You walk through a small museum, step up to a painting, and jump into it. Inside, you run, jump, dash, and climb to the finish line while a timer counts every millisecond. Each painting has its own look and its own twist on the rules. It is a game for people who enjoy "speedrunning" (replaying a level over and over to shave off time).
 
-The game is still being made: four of a planned eight paintings are playable so far.
+Four painting worlds are playable now, with more on the way.
 
 ## What you can do with it
 
